@@ -1,0 +1,7 @@
+Execute 'make' to obtain the executable file 'andromeda'
+  - make with parameters:
+    - bls:    block size in CUDA code (default 256)
+    - score:  initial conditions using host functions (default using device)
+              This parameter can be set to any value
+  - Example: make andromeda bls=16 score=1
+  - Use 'make clean' to delete the executable file
