@@ -156,31 +156,83 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
   double *lvx = (double*)malloc(n * sizeof(double));
   double *lvy = (double*)malloc(n * sizeof(double));
   double *lvz = (double*)malloc(n * sizeof(double));
-  for(int i = 0; i < n; i++){
-    double r, rx3;
-    r = 1.0 / sqrt(pow(random_host(), -1.5) - 1);
-    rx3 = random_host();
-    lz[i] = (1 - 2 * random_host()) * r;
-    lx[i] = sqrt(r * r - lz[i] * lz[i]) * cos(2 * PI * rx3);
-    ly[i] = sqrt(r * r - lz[i] * lz[i]) * sin(2 * PI * rx3);
-#ifndef UNSTABLE
-    double rx4, rx5, rx7, Ve, V;
-    Ve = sqrt(2.0) / sqrt(sqrt(1 + r * r));
-    rx4 = random_host();
-    rx5 = random_host();
-    while(0.1 * rx5 >= rx4 * rx4 * pow(1 - rx4 * rx4, 3.5)){
-      rx4 = random_host();
-      rx5 = random_host();
-    }
-    V = Ve * rx4;
-    lvz[i] = (1 - 2 * random_host()) * V;
-    rx7 = random_host();
-    lvx[i] = sqrt(V * V - lvz[i] * lvz[i]) * cos(2 * PI * rx7);
-    lvy[i] = sqrt(V * V - lvz[i] * lvz[i]) * sin(2 * PI * rx7);
-#else
-    lvx[i] = lvy[i] = lvz[i] = 0.0;
-#endif
+
+  double mp = 1.0;
+  double centerx = 0.0;
+  double centery = 0.0;
+  double centervx = 0.0;
+  double centervy = 0.0;
+  double Rmin = 10 * R;
+  double rmin = 0.2 * Rmin;
+  double rd = 0.05 * Rmin;
+  double nummin = 12;
+  double numd = 3;
+  double ring = 1;
+
+  revolution = 3;
+  nout = 20;
+  mp = strtod(argv[1], NULL) * 2.858860e-12;
+  n = atoi(argv[2]);
+  dt = sqrt(pow(2 * PI, 2) * pow(R, 3) / GMSATURN) / 200;
+  double parameter = 0.8;
+  if(argc >= 4)
+    revolution = atoi(argv[3]);
+  if(argc >= 6)
+    dt = strtod(argv[5], NULL);
+  if(argc >= 5)
+    nout = atoi(argv[4]);
+  double piece = 2 * PI / n;
+  double velocity = sqrt(GMSATURN / R);
+
+  numOfPartical[0] = nummin;
+  radiusOfPartical[0] = rmin;
+
+  for(i = 1; i < ring; i++){
+      numOfPartical[i] = numOfPartical[i-1] + numd;
+      radiusOfPartical[i] = radiusOfPartical[i-1] + rd;
   }
+
+  count = 0;
+
+   for(j = 0; j < ring; j++){
+      double piece = 2 * PI / numOfPartical[j];
+      double velocity = sqrt(GMSATURN / radiusOfPartical[j]);
+      for(i = 0; i < numOfPartical[j]; i++){
+        lx[count] = centerx + radiusOfPartical[j] * cos(piece * i);
+        ly[count] = centery + radiusOfPartical[j] * sin(piece * i);
+        lz[count] = 0;
+        lvx[count] = centervx - velocity * sin(piece * i) * parameter;
+        lvy[count] = centervy + velocity * cos(piece * i) * parameter;
+        lvz[count] = 0;
+        count++;
+      }
+  }
+
+//   for(int i = 0; i < n; i++){
+//     double r, rx3;
+//     r = 1.0 / sqrt(pow(random_host(), -1.5) - 1);
+//     rx3 = random_host();
+//     lz[i] = (1 - 2 * random_host()) * r;
+//     lx[i] = sqrt(r * r - lz[i] * lz[i]) * cos(2 * PI * rx3);
+//     ly[i] = sqrt(r * r - lz[i] * lz[i]) * sin(2 * PI * rx3);
+// #ifndef UNSTABLE
+//     double rx4, rx5, rx7, Ve, V;
+//     Ve = sqrt(2.0) / sqrt(sqrt(1 + r * r));
+//     rx4 = random_host();
+//     rx5 = random_host();
+//     while(0.1 * rx5 >= rx4 * rx4 * pow(1 - rx4 * rx4, 3.5)){
+//       rx4 = random_host();
+//       rx5 = random_host();
+//     }
+//     V = Ve * rx4;
+//     lvz[i] = (1 - 2 * random_host()) * V;
+//     rx7 = random_host();
+//     lvx[i] = sqrt(V * V - lvz[i] * lvz[i]) * cos(2 * PI * rx7);
+//     lvy[i] = sqrt(V * V - lvz[i] * lvz[i]) * sin(2 * PI * rx7);
+// #else
+//     lvx[i] = lvy[i] = lvz[i] = 0.0;
+// #endif
+//   }
   cudaMemcpy(x, lx, (size_t) n * sizeof(double), cudaMemcpyHostToDevice);
   cudaMemcpy(y, ly, (size_t) n * sizeof(double), cudaMemcpyHostToDevice);
   cudaMemcpy(z, lz, (size_t) n * sizeof(double), cudaMemcpyHostToDevice);
