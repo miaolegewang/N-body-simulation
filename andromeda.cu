@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
    *  Otherwise, use host function to setup initial conditions
    *
    */
-#ifndef MCORE
+#ifdef MCORE
   initialConditions<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass);
   cudaDeviceSynchronize();
 #else
@@ -188,6 +188,11 @@ int main(int argc, char *argv[])
  *  Functions Implmenetation Section
  *
  */
+__global__ void initialConditions(int n, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* mass){
+  /*  TODO    */
+}
+
+
 void initialCondition_host(int n, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* mass){
   srand(time(0));
   double *lx = (double*)malloc(n * sizeof(double));
