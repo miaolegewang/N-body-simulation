@@ -290,9 +290,6 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lvz[count] = 0.0;
 
        norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
-       n1 = lx[count] / norm;
-       n2 = ly[count] / norm;
-       n3 = lz[count] / norm;
        rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
 
        lx[count] += cx;
@@ -303,9 +300,6 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
         *    TODO: set up initial condition for velocity
         */
        norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
-       n1 = lvx[count] / norm;
-       n2 = lvy[count] / norm;
-       n3 = lvz[count] / norm;
        rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
 
        count++;
@@ -342,9 +336,6 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
       lvz[count] = 0.0;
 
       norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
-      n1 = lx[count] / norm;
-      n2 = ly[count] / norm;
-      n3 = lz[count] / norm;
       rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
 
       lx[count] += cx;
@@ -355,9 +346,6 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        *  TODO: setup initial conditions for velocity
        */
       norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
-      n1 = lvx[count] / norm;
-      n2 = lvy[count] / norm;
-      n3 = lvz[count] / norm;
       rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
 
       count++;
