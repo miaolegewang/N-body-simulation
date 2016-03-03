@@ -26,8 +26,8 @@
 #define G (4.0 * pow(PI, 2) / pow(365.0, 2) * 285.8860e-06)
 #define MASS_1 1.0                // Center mass of 1st galaxy
 #define MASS_2 1.0                // Center mass of 2nd galaxy
-#define NUM_OF_RING_1 2          // Number of rings in 1st galaxy
-#define NUM_OF_RING_2 2          // Number of rings in 2nd galaxy
+#define NUM_OF_RING_1 20          // Number of rings in 1st galaxy
+#define NUM_OF_RING_2 20          // Number of rings in 2nd galaxy
 #define RING_BASE_1 (R * 2)       // Radius of first ring in 1st galaxy
 #define RING_BASE_2 (R * 2)       // Radius of first ring in 2nd galaxy
 #define NUM_P_BASE 12             // Number of particles in the first ring
