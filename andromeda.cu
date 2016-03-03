@@ -26,8 +26,8 @@
 #define G (4.0 * pow(PI, 2) / pow(365.0, 2) * 285.8860e-06)
 #define MASS_1 1.0                // Center mass of 1st galaxy
 #define MASS_2 1.0                // Center mass of 2nd galaxy
-#define NUM_OF_RING_1 30          // Number of rings in 1st galaxy
-#define NUM_OF_RING_2 30          // Number of rings in 2nd galaxy
+#define NUM_OF_RING_1 2          // Number of rings in 1st galaxy
+#define NUM_OF_RING_2 2          // Number of rings in 2nd galaxy
 #define RING_BASE_1 (R * 2)       // Radius of first ring in 1st galaxy
 #define RING_BASE_2 (R * 2)       // Radius of first ring in 2nd galaxy
 #define NUM_P_BASE 12             // Number of particles in the first ring
@@ -220,9 +220,9 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    *  Setup position of each particles
    *
    */
-   lx[0] = (double)(rand() % 5);
-   ly[0] = (double)(rand() % 5);
-   lz[0] = (double)(rand() % 5);
+   lx[0] = (double)rand() / RAND_MAX;
+   ly[0] = (double)rand() / RAND_MAX;
+   lz[0] = (double)rand() / RAND_MAX;
    lvx[0] = lvy[0] = lvz[0] = 0.0;
    double cx = lx[0], cy = ly[0], cz = lz[0], cvx = lvx[0], cvy = lvy[0], cvz = lvz[0];
    int radius = RING_BASE_1;
