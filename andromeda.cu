@@ -137,17 +137,17 @@ int main(int argc, char *argv[])
   const unsigned int extra = numOfBlocks * BLOCKSIZE;
   cudaMalloc((void**) &x, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
   cudaMemset((void**) x + n, 0.0, (size_t)(extra * sizeof(double)));
-  cudaMalloc((void**) &y, (size_t)(numOfBlocks * sizeof(double)));
+  cudaMalloc((void**) &y, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
   cudaMemset((void**) y + n, 0.0, (size_t)(extra * sizeof(double)));
-  cudaMalloc((void**) &z, (size_t)(numOfBlocks * sizeof(double)));
+  cudaMalloc((void**) &z, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
   cudaMemset((void**) z + n, 0.0, (size_t)(extra * sizeof(double)));
-  cudaMalloc((void**) &vx, (size_t)(numOfBlocks * sizeof(double)));
+  cudaMalloc((void**) &vx, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
   cudaMemset((void**) vx + n, 0.0, (size_t)(extra * sizeof(double)));
-  cudaMalloc((void**) &vy, (size_t)(numOfBlocks * sizeof(double)));
+  cudaMalloc((void**) &vy, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
   cudaMemset((void**) vy + n, 0.0, (size_t)(extra * sizeof(double)));
-  cudaMalloc((void**) &vz, (size_t)(numOfBlocks * sizeof(double)));
+  cudaMalloc((void**) &vz, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
   cudaMemset((void**) vz + n, 0.0, (size_t)(extra * sizeof(double)));
-  cudaMalloc((void**) &mass, (size_t)(numOfBlocks * sizeof(double)));
+  cudaMalloc((void**) &mass, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
   cudaMemset((void**) mass + n, 0.0, (size_t)(extra * sizeof(double)));
 
   /*
