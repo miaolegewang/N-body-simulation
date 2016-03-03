@@ -229,7 +229,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    int count = 1;
 
    double norm, tmpx, tmpy, tmpz, normv, tmpvx, tmpvy, tmpvz;
-   double a, c, sigma, sigma1;
+   double a, c, s, sigma, sigma1;
 
    sigma = -2.0 * PI/3;
    sigma1 = -PI/3.0;
@@ -242,15 +242,15 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
      double piece = 2.0 * PI / numOfP;
      double velocity = sqrt(G * MASS_1 / radius);
      for(int j = 0; j < numOfP; j++){
-       lx[count] = cx + radius * cos(piece * j);
-       ly[count] = cy + radius * sin(piece * j);
-       lz[count] = cz;
-       lvx[count] = cvx - velocity * sin(piece * j) * V_PARAMTER;
-       lvy[count] = cvy + velocity * cos(piece * j) * V_PARAMTER;
-       lvz[count] = cvz;
+       lx[count] = radius * cos(piece * j);
+       ly[count] = radius * sin(piece * j);
+       lz[count] = 0.0;
+       lvx[count] = - velocity * sin(piece * j) * V_PARAMTER;
+       lvy[count] = velocity * cos(piece * j) * V_PARAMTER;
+       lvz[count] = 0.0;
 
        /*[vx' vy' vz'] = R [vx vy vz]*/
-        norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count])
+        norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
         lx[count] /= norm;
         ly[count] /= norm;
         lz[count] /= norm;
@@ -259,12 +259,12 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
         tmpy = ( a * lx[count] * ly[count] + s * lz[count]) * lx[count] + ( a * ly[count] * ly[count] + c) * ly[count] + ( a * ly[count] * lz[count] - s * lx[count] ) * lz[count];
         tmpz = ( a * lx[count] * lz[count] - s * ly[count]) * lx[count] + ( a * ly[count] * lz[count] + s * lx[count]) * ly[count] + ( a * lz[count] * lz[count] + c) * lz[count];
 
-        lx[count] = tmpx * norm;
-        ly[count] = tmpy * norm;
-        lz[count] = tmpz * norm;
+        lx[count] = cx + tmpx * norm;
+        ly[count] = cy + tmpy * norm;
+        lz[count] = cz + tmpz * norm;
 
         /*[vx' vy' vz'] = R [vx vy vz]*/
-         normv = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count])
+         normv = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
          lvx[count] /= normv;
          lvy[count] /= normv;
          lvz[count] /= normv;
@@ -314,7 +314,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lvy[count] = cvy + velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = cvz;
 
-       norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count])
+       norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
        lx[count] /= norm;
        ly[count] /= norm;
        lz[count] /= norm;
@@ -328,7 +328,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lz[count] = tmpz * norm;
 
        /*[vx' vy' vz'] = R [vx vy vz]*/
-        normv = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count])
+        normv = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
         lvx[count] /= normv;
         lvy[count] /= normv;
         lvz[count] /= normv;
