@@ -417,10 +417,10 @@ __global__ void accel_3_body(int n, double* x, double* y, double* z, double* vx,
   const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned int num1 = (NUM_P_BASE + NUM_P_BASE + (NUM_OF_RING_1 - 1) * INC_NUM_P) / 2;
   const unsigned int tdx = threadIdx.x;
-  __shared__ lx[BLOCKSIZE];
-  __shared__ ly[BLOCKSIZE];
-  __shared__ lz[BLOCKSIZE];
-  __shared__ lm[BLOCKSIZE];
+  __shared__ double lx[BLOCKSIZE];
+  __shared__ double ly[BLOCKSIZE];
+  __shared__ double lz[BLOCKSIZE];
+  __shared__ double lm[BLOCKSIZE];
 
   double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = 0.0, thisY = 0.0, thisZ = 0.0;
   int i;
