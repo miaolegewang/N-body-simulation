@@ -279,12 +279,12 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
         ly[count] += cy;
         lz[count] += cz;
 
-        rotate(lvx + count, lvy + count, lvz + count, 0, 0, 1, omega);
+        //rotate(lvx + count, lvy + count, lvz + count, 0, 0, 1, omega);
         norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
         n1 = lvx[count] / norm;
         n2 = lvy[count] / norm;
         n3 = lvz[count] / norm;
-        rotate(lvx + count, lvy + count, lvz + count, n1, n2, n3, sigma);
+        rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
 
         count++;
      }
@@ -330,12 +330,12 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        ly[count] += cy;
        lz[count] += cz;
 
-       rotate(lvx + count, lvy + count, lvz + count, 0, 0, 1, omega);
+       //rotate(lvx + count, lvy + count, lvz + count, 0, 0, 1, omega);
        norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
        n1 = lvx[count] / norm;
        n2 = lvy[count] / norm;
        n3 = lvz[count] / norm;
-       rotate(lvx + count, lvy + count, lvz + count, n1, n2, n3, sigma);
+       rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
 
        count++;
      }
