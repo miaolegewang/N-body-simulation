@@ -235,8 +235,8 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lx[count] = cx + radius * cos(piece * j);
        ly[count] = cy + radius * sin(piece * j);
        lz[count] = cz;
-       lvx[count] = cvx - velocity * sin(piece * i) * V_PARAMTER;
-       lvy[count] = cvy + velocity * cos(piece * i) * V_PARAMTER;
+       lvx[count] = cvx - velocity * sin(piece * j) * V_PARAMTER;
+       lvy[count] = cvy + velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = cvz;
        count++;
      }
@@ -262,8 +262,8 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lx[count] = cx + radius * cos(piece * j);
        ly[count] = cy + radius * sin(piece * j);
        lz[count] = cz;
-       lvx[count] = cvx - velocity * sin(piece * i) * V_PARAMTER;
-       lvy[count] = cvy + velocity * cos(piece * i) * V_PARAMTER;
+       lvx[count] = cvx - velocity * sin(piece * j) * V_PARAMTER;
+       lvy[count] = cvy + velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = cvz;
        count++;
      }
