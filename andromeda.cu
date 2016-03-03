@@ -223,6 +223,8 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
   double *lvz = (double*)malloc(n * sizeof(double));
   double *lmass = (double*)malloc(n * sizeof(double));
 
+  double n1, n2, n3, norm;
+
   /*
    *  Setup mass of each particles (including center mass)
    *
@@ -317,7 +319,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lvy[count] = cvy + velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = cvz;
 
-       
+
        rotate(lx + count, ly + count, lz + count, 0, 0, 1, omega);
        norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
        n1 = lx / norm;
