@@ -54,6 +54,15 @@ __global__ void accel(int, double*, double*, double*, double*, double*, double*,
  *                   [mass] [dt]
  *
  */
+__global__ void accel_3_body(int, double*, double*, double*, double*, double*, double*, double*, double);
+/*
+ *  accel_3_body - kernel function : update velocity using leapfrog algorithm in 3-body
+ *    parameters:
+ *      [#particles] [x position] [y position] [x position]
+ *                   [x velocity] [y velocity] [z velocity]
+ *                   [mass] [dt]
+ *
+ */
 __global__ void printstate(int, double*, double*, double*, double*, double*, double*);
 /*
  *  printstate - kernel function: print position and velocity
@@ -158,11 +167,11 @@ int main(int argc, char *argv[])
      *   in the middle
      *
      */
-    accel<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
     leapstep<<< grids, threads >>>(n, x, y, z, vx, vy, vz, dt);
     cudaDeviceSynchronize();
-    accel<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
   }
   if(mstep % nout == 0)
@@ -306,7 +315,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    radius = RING_BASE_2;
 
     omega = -PI/6.0;
-    sigma = -PI/3.0; 
+    sigma = -PI/3.0;
    for(int i = 0; i < NUM_OF_RING_2; i++){
      int numOfP = NUM_P_BASE + INC_NUM_P * i;
      double velocity = sqrt(G * MASS_2 / radius);
@@ -368,6 +377,7 @@ __global__ void leapstep(int n, double *x, double *y, double *z, double *vx, dou
   }
 }
 
+
 __global__ void accel(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double* mass, double dt){
   const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned int tdx = threadIdx.x;
@@ -397,6 +407,61 @@ __global__ void accel(int n, double *x, double *y, double *z, double *vx, double
     }
 
     // Updates velocities in each directions
+    vx[serial] += 0.5 * dt * ax;
+    vy[serial] += 0.5 * dt * ay;
+    vz[serial] += 0.5 * dt * az;
+  }
+}
+
+__global__ void accel_3_body(int n, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* mass, double dt){
+  const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned int num1 = (NUM_P_BASE + NUM_P_BASE + (NUM_OF_RING_1 - 1) * INC_NUM_P) / 2;
+  const unsigned int tdx = threadIdx.x;
+  __shared__ lx[BLOCKSIZE];
+  __shared__ ly[BLOCKSIZE];
+  __shared__ lz[BLOCKSIZE];
+  __shared__ lm[BLOCKSIZE];
+
+  double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = 0.0, thisY = 0.0, thisZ = 0.0;
+  int i;
+  if(serial < n){
+    thisX = x[serial];
+    thisY = y[serial];
+    thisZ = z[serial];
+  }
+  for(i = 0; i < gridDim.x - 1; i++){
+    lx[tdx] = x[i * BLOCKSIZE + tdx];
+    ly[tdx] = y[i * BLOCKSIZE + tdx];
+    lz[tdx] = z[i * BLOCKSIZE + tdx];
+    lm[tdx] = mass[i * BLOCKSIZE + tdx];
+    __syncthreads();
+    for(int j = 0; j < BLOCKSIZE; j++){
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      if(i * BLOCKSIZE + j != serial){
+        ax += - G * lm[j] * (thisX - lx[j]) / norm;
+        ay += - G * lm[j] * (thisY - ly[j]) / norm;
+        az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      }
+    }
+    __syncthreads();
+  }
+  const unsigned int itrSize = min(BLOCKSIZE, n - i * BLOCKSIZE);
+  if(tdx < itrSize){
+    lx[tdx] = x[i * BLOCKSIZE + tdx];
+    ly[tdx] = y[i * BLOCKSIZE + tdx];
+    lz[tdx] = z[i * BLOCKSIZE + tdx];
+    lm[tdx] = mass[i * BLOCKSIZE + tdx];
+  }
+  __syncthreads();
+  if(serial < n){
+    for(int j = 0; j < itrSize; j++){
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      if(i * BLOCKSIZE + j != serial){
+        ax += - G * lm[j] * (thisX - lx[j]) / norm;
+        ay += - G * lm[j] * (thisY - ly[j]) / norm;
+        az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      }
+    }
     vx[serial] += 0.5 * dt * ax;
     vy[serial] += 0.5 * dt * ay;
     vz[serial] += 0.5 * dt * az;
