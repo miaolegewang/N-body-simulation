@@ -306,7 +306,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    radius = RING_BASE_2;
 
     omega = -PI/6.0;
-    sigma = PI/3.0;
+    sigma = -PI/3.0;
    for(int i = 0; i < NUM_OF_RING_2; i++){
      int numOfP = NUM_P_BASE + INC_NUM_P * i;
      double velocity = sqrt(G * MASS_2 / radius);
