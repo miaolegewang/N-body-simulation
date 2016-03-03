@@ -26,7 +26,7 @@
 #define G (4.0 * pow(PI, 2) / pow(365.0, 2) * 285.8860e-06)
 #define MASS_1 1.0                // Center mass of 1st galaxy
 #define MASS_2 1.0                // Center mass of 2nd galaxy
-#define NUM_OF_RING_1 20          // Number of rings in 1st galaxy
+#define NUM_OF_RING_1 20         // Number of rings in 1st galaxy
 #define NUM_OF_RING_2 20          // Number of rings in 2nd galaxy
 #define RING_BASE_1 (R * 2)       // Radius of first ring in 1st galaxy
 #define RING_BASE_2 (R * 2)       // Radius of first ring in 2nd galaxy
@@ -248,35 +248,35 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lvx[count] = - velocity * sin(piece * j) * V_PARAMTER;
        lvy[count] = velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = 0.0;
-
-       /*[vx' vy' vz'] = R [vx vy vz]*/
-        norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
-        lx[count] /= norm;
-        ly[count] /= norm;
-        lz[count] /= norm;
-
-        tmpx = ( a * lx[count] * lx[count] + c ) * lx[count] + ( a * lx[count] * ly[count] -sigma * lz[count]) * ly[count] + ( a * lx[count] * lz[count] + s * ly[count] ) * lz[count];
-        tmpy = ( a * lx[count] * ly[count] + s * lz[count]) * lx[count] + ( a * ly[count] * ly[count] + c) * ly[count] + ( a * ly[count] * lz[count] - s * lx[count] ) * lz[count];
-        tmpz = ( a * lx[count] * lz[count] - s * ly[count]) * lx[count] + ( a * ly[count] * lz[count] + s * lx[count]) * ly[count] + ( a * lz[count] * lz[count] + c) * lz[count];
-
-        lx[count] = cx + tmpx * norm;
-        ly[count] = cy + tmpy * norm;
-        lz[count] = cz + tmpz * norm;
-
-        /*[vx' vy' vz'] = R [vx vy vz]*/
-         normv = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
-         lvx[count] /= normv;
-         lvy[count] /= normv;
-         lvz[count] /= normv;
-
-         tmpvx = ( a * lvx[count] * lvx[count] + c ) * lvx[count] + ( a * lvx[count] * lvy[count] -sigma * lvz[count]) * lvy[count] + ( a * lvx[count] * lvz[count] + s * lvy[count] ) * lvz[count];
-         tmpvy = ( a * lvx[count] * lvy[count] + s * lvz[count]) * lvx[count] + ( a * lvy[count] * lvy[count] + c) * lvy[count] + ( a * lvy[count] * lvz[count] - s * lvx[count] ) * lvz[count];
-         tmpvz = ( a * lvx[count] * lvz[count] - s * lvy[count]) * lvx[count] + ( a * lvy[count] * lvz[count] + s * lvx[count]) * lvy[count] + ( a * lvz[count] * lvz[count] + c) * lvz[count];
-
-         lvx[count] = tmpvx * normv;
-         lvy[count] = tmpvy * normv;
-         lvz[count] = tmpvz * normv;
-
+       //
+      //  /*[vx' vy' vz'] = R [vx vy vz]*/
+      //   norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
+      //   lx[count] /= norm;
+      //   ly[count] /= norm;
+      //   lz[count] /= norm;
+       //
+      //   tmpx = ( a * lx[count] * lx[count] + c ) * lx[count] + ( a * lx[count] * ly[count] -sigma * lz[count]) * ly[count] + ( a * lx[count] * lz[count] + s * ly[count] ) * lz[count];
+      //   tmpy = ( a * lx[count] * ly[count] + s * lz[count]) * lx[count] + ( a * ly[count] * ly[count] + c) * ly[count] + ( a * ly[count] * lz[count] - s * lx[count] ) * lz[count];
+      //   tmpz = ( a * lx[count] * lz[count] - s * ly[count]) * lx[count] + ( a * ly[count] * lz[count] + s * lx[count]) * ly[count] + ( a * lz[count] * lz[count] + c) * lz[count];
+       //
+      //   lx[count] = cx + tmpx * norm;
+      //   ly[count] = cy + tmpy * norm;
+      //   lz[count] = cz + tmpz * norm;
+       //
+      //   /*[vx' vy' vz'] = R [vx vy vz]*/
+      //    normv = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
+      //    lvx[count] /= normv;
+      //    lvy[count] /= normv;
+      //    lvz[count] /= normv;
+       //
+      //    tmpvx = ( a * lvx[count] * lvx[count] + c ) * lvx[count] + ( a * lvx[count] * lvy[count] -sigma * lvz[count]) * lvy[count] + ( a * lvx[count] * lvz[count] + s * lvy[count] ) * lvz[count];
+      //    tmpvy = ( a * lvx[count] * lvy[count] + s * lvz[count]) * lvx[count] + ( a * lvy[count] * lvy[count] + c) * lvy[count] + ( a * lvy[count] * lvz[count] - s * lvx[count] ) * lvz[count];
+      //    tmpvz = ( a * lvx[count] * lvz[count] - s * lvy[count]) * lvx[count] + ( a * lvy[count] * lvz[count] + s * lvx[count]) * lvy[count] + ( a * lvz[count] * lvz[count] + c) * lvz[count];
+       //
+      //    lvx[count] = tmpvx * normv;
+      //    lvy[count] = tmpvy * normv;
+      //    lvz[count] = tmpvz * normv;
+       //
 
         count++;
      }
@@ -313,33 +313,33 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lvx[count] = cvx - velocity * sin(piece * j) * V_PARAMTER;
        lvy[count] = cvy + velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = cvz;
-
-       norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
-       lx[count] /= norm;
-       ly[count] /= norm;
-       lz[count] /= norm;
-
-       tmpx = ( a * lx[count] * lx[count] + c ) * lx[count] + ( a * lx[count] * ly[count] -sigma * lz[count]) * ly[count] + ( a * lx[count] * lz[count] + s * ly[count] ) * lz[count];
-       tmpy = ( a * lx[count] * ly[count] + s * lz[count]) * lx[count] + ( a * ly[count] * ly[count] + c) * ly[count] + ( a * ly[count] * lz[count] - s * lx[count] ) * lz[count];
-       tmpz = ( a * lx[count] * lz[count] - s * ly[count]) * lx[count] + ( a * ly[count] * lz[count] + s * lx[count]) * ly[count] + ( a * lz[count] * lz[count] + c) * lz[count];
-
-       lx[count] = tmpx * norm;
-       ly[count] = tmpy * norm;
-       lz[count] = tmpz * norm;
-
-       /*[vx' vy' vz'] = R [vx vy vz]*/
-        normv = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
-        lvx[count] /= normv;
-        lvy[count] /= normv;
-        lvz[count] /= normv;
-
-        tmpvx = ( a * lvx[count] * lvx[count] + c ) * lvx[count] + ( a * lvx[count] * lvy[count] -sigma * lvz[count]) * lvy[count] + ( a * lvx[count] * lvz[count] + s * lvy[count] ) * lvz[count];
-        tmpvy = ( a * lvx[count] * lvy[count] + s * lvz[count]) * lvx[count] + ( a * lvy[count] * lvy[count] + c) * lvy[count] + ( a * lvy[count] * lvz[count] - s * lvx[count] ) * lvz[count];
-        tmpvz = ( a * lvx[count] * lvz[count] - s * lvy[count]) * lvx[count] + ( a * lvy[count] * lvz[count] + s * lvx[count]) * lvy[count] + ( a * lvz[count] * lvz[count] + c) * lvz[count];
-
-        lvx[count] = tmpvx * normv;
-        lvy[count] = tmpvy * normv;
-        lvz[count] = tmpvz * normv;
+       //
+      //  norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
+      //  lx[count] /= norm;
+      //  ly[count] /= norm;
+      //  lz[count] /= norm;
+       //
+      //  tmpx = ( a * lx[count] * lx[count] + c ) * lx[count] + ( a * lx[count] * ly[count] -sigma * lz[count]) * ly[count] + ( a * lx[count] * lz[count] + s * ly[count] ) * lz[count];
+      //  tmpy = ( a * lx[count] * ly[count] + s * lz[count]) * lx[count] + ( a * ly[count] * ly[count] + c) * ly[count] + ( a * ly[count] * lz[count] - s * lx[count] ) * lz[count];
+      //  tmpz = ( a * lx[count] * lz[count] - s * ly[count]) * lx[count] + ( a * ly[count] * lz[count] + s * lx[count]) * ly[count] + ( a * lz[count] * lz[count] + c) * lz[count];
+       //
+      //  lx[count] = tmpx * norm;
+      //  ly[count] = tmpy * norm;
+      //  lz[count] = tmpz * norm;
+       //
+      //  /*[vx' vy' vz'] = R [vx vy vz]*/
+      //   normv = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
+      //   lvx[count] /= normv;
+      //   lvy[count] /= normv;
+      //   lvz[count] /= normv;
+       //
+      //   tmpvx = ( a * lvx[count] * lvx[count] + c ) * lvx[count] + ( a * lvx[count] * lvy[count] -sigma * lvz[count]) * lvy[count] + ( a * lvx[count] * lvz[count] + s * lvy[count] ) * lvz[count];
+      //   tmpvy = ( a * lvx[count] * lvy[count] + s * lvz[count]) * lvx[count] + ( a * lvy[count] * lvy[count] + c) * lvy[count] + ( a * lvy[count] * lvz[count] - s * lvx[count] ) * lvz[count];
+      //   tmpvz = ( a * lvx[count] * lvz[count] - s * lvy[count]) * lvx[count] + ( a * lvy[count] * lvz[count] + s * lvx[count]) * lvy[count] + ( a * lvz[count] * lvz[count] + c) * lvz[count];
+       //
+      //   lvx[count] = tmpvx * normv;
+      //   lvy[count] = tmpvy * normv;
+      //   lvz[count] = tmpvz * normv;
 
        count++;
      }
