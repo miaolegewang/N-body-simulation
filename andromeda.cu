@@ -203,7 +203,7 @@ void rotate(double* x, double* y, double *z, double n1, double n2, double n3, do
    a = 1 - cos(sigma);
 
 
-  tmpx = ( a * n1 * n1 + c ) * (*x) + ( a * n1 * n2 -sigma * n3) * (*y) + ( a * n1 * n3 + s * n2 ) * (*z);
+  tmpx = ( a * n1 * n1 + c ) * (*x) + ( a * n1 * n2 - s * n3) * (*y) + ( a * n1 * n3 + s * n2 ) * (*z);
   tmpy = ( a * n1 * n2 + s * n3) * (*x) + ( a * n2 * n2 + c) * (*y) + ( a * n2 * n3 - s * n1 ) * (*z);
   tmpz = ( a * n1 * n3 - s * n2) * (*x) + ( a * n2 * n3 + s * n1) * (*y) + ( a * n3 * n3 + c) * (*z);
 
@@ -312,12 +312,12 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
      double velocity = sqrt(G * MASS_2 / radius);
      double piece = 2.0 * PI / numOfP;
      for(int j = 0; j < numOfP; j++){
-       lx[count] = cx + radius * cos(piece * j);
-       ly[count] = cy + radius * sin(piece * j);
-       lz[count] = cz;
-       lvx[count] = cvx - velocity * sin(piece * j) * V_PARAMTER;
-       lvy[count] = cvy + velocity * cos(piece * j) * V_PARAMTER;
-       lvz[count] = cvz;
+       lx[count] =  radius * cos(piece * j);
+       ly[count] =  radius * sin(piece * j);
+       lz[count] = 0.0;
+       lvx[count] = - velocity * sin(piece * j) * V_PARAMTER;
+       lvy[count] = velocity * cos(piece * j) * V_PARAMTER;
+       lvz[count] = 0.0;
 
        rotate(lx + count, ly + count, lz + count, 0, 0, 1, omega);
        norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
