@@ -31,8 +31,8 @@ else
 endif
 
 # initialize data using host functions
-ifdef score
-	CFLAGS += -DSINGLECORE=1
+ifdef mcore
+	CFLAGS += -DMCORE=1
 endif
 
 # add libraries
@@ -41,7 +41,7 @@ LIBRARY = -lm
 BLOCKING = $(DIM)
 CFLAGS += $(BLOCKING) -O3
 
-OBJECTS = plummer.cu
+OBJECTS = andromeda.cu
 # defining target for make
 default:
 all: clean andromeda
