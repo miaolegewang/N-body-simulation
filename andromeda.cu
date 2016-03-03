@@ -275,7 +275,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    double radius = RING_BASE_1;
    int count = 1;
 
-   double omega = -PI / 6.0, sigma = PI / 3.0, n1, n2, n3, norm;
+   double omega = -PI / 6.0, sigma = PI / 3.0, norm;
 
    for(int i = 0; i < NUM_OF_RING_1; i++){
      int numOfP = NUM_P_BASE + INC_NUM_P * i;
@@ -435,10 +435,10 @@ __global__ void accel_3_body(int n, double* x, double* y, double* z, double* vx,
   const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned int numofp1 = (NUM_P_BASE * 2 + (NUM_OF_RING_1 - 1) * INC_NUM_P) * NUM_OF_RING_1 / 2 + 1;
   const unsigned int tdx = threadIdx.x;
-  __shared__ lx[BLOCKSIZE];
-  __shared__ ly[BLOCKSIZE];
-  __shared__ lz[BLOCKSIZE];
-  __shared__ lm[BLOCKSIZE];
+  __shared__ double lx[BLOCKSIZE];
+  __shared__ double ly[BLOCKSIZE];
+  __shared__ double lz[BLOCKSIZE];
+  __shared__ double lm[BLOCKSIZE];
   double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = x[serial], thisY = y[serial], thisZ = z[serial];
   for(int i = 0; i < gridDim.x; i++){
     lx[tdx] = x[i * BLOCKSIZE + tdx];
