@@ -227,6 +227,16 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    double cx = lx[0], cy = ly[0], cz = lz[0], cvx = lvx[0], cvy = lvy[0], cvz = lvz[0];
    double radius = RING_BASE_1;
    int count = 1;
+
+   double norm, tmpx, tmpy, tmpz, normv, tmpvx, tmpvy, tmpvz;
+   double a, c, sigma, sigma1;
+
+   sigma = -2.0 * PI/3;
+   sigma1 = -PI/3.0;
+   c = cos(sigma1);
+   s = sin(sigma1);
+   a = 1 - cos(sigma);
+
    for(int i = 0; i < NUM_OF_RING_1; i++){
      int numOfP = NUM_P_BASE + INC_NUM_P * i;
      double piece = 2.0 * PI / numOfP;
@@ -238,10 +248,48 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lvx[count] = cvx - velocity * sin(piece * j) * V_PARAMTER;
        lvy[count] = cvy + velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = cvz;
-       count++;
+
+       /*[vx' vy' vz'] = R [vx vy vz]*/
+        norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count])
+        lx[count] /= norm;
+        ly[count] /= norm;
+        lz[count] /= norm;
+
+        tmpx = ( a * lx[count] * lx[count] + c ) * lx[count] + ( a * lx[count] * ly[count] -sigma * lz[count]) * ly[count] + ( a * lx[count] * lz[count] + s * ly[count] ) * lz[count];
+        tmpy = ( a * lx[count] * ly[count] + s * lz[count]) * lx[count] + ( a * ly[count] * ly[count] + c) * ly[count] + ( a * ly[count] * lz[count] - s * lx[count] ) * lz[count];
+        tmpz = ( a * lx[count] * lz[count] - s * ly[count]) * lx[count] + ( a * ly[count] * lz[count] + s * lx[count]) * ly[count] + ( a * lz[count] * lz[count] + c) * lz[count];
+
+        lx[count] = tmpx * norm;
+        ly[count] = tmpy * norm;
+        lz[count] = tmpz * norm;
+
+        /*[vx' vy' vz'] = R [vx vy vz]*/
+         normv = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count])
+         lvx[count] /= normv;
+         lvy[count] /= normv;
+         lvz[count] /= normv;
+
+         tmpvx = ( a * lvx[count] * lvx[count] + c ) * lvx[count] + ( a * lvx[count] * lvy[count] -sigma * lvz[count]) * lvy[count] + ( a * lvx[count] * lvz[count] + s * lvy[count] ) * lvz[count];
+         tmpvy = ( a * lvx[count] * lvy[count] + s * lvz[count]) * lvx[count] + ( a * lvy[count] * lvy[count] + c) * lvy[count] + ( a * lvy[count] * lvz[count] - s * lvx[count] ) * lvz[count];
+         tmpvz = ( a * lvx[count] * lvz[count] - s * lvy[count]) * lvx[count] + ( a * lvy[count] * lvz[count] + s * lvx[count]) * lvy[count] + ( a * lvz[count] * lvz[count] + c) * lvz[count];
+
+         lvx[count] = tmpvx * normv;
+         lvy[count] = tmpvy * normv;
+         lvz[count] = tmpvz * normv;
+
+
+        count++;
      }
      radius += INC_R_RING;
    }
+
+
+    sigma = 2.0 * PI/3;
+    sigma1 = -PI/3.0;
+    c = cos(sigma1);
+    s = sin(sigma1);
+    a = 1 - cos(sigma);
+
    lx[count] = lx[0] + radius * 3.0;
    ly[count] = ly[0] + radius * 4.0;
    lz[count] = lz[0];
@@ -265,10 +313,39 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lvx[count] = cvx - velocity * sin(piece * j) * V_PARAMTER;
        lvy[count] = cvy + velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = cvz;
+
+       norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count])
+       lx[count] /= norm;
+       ly[count] /= norm;
+       lz[count] /= norm;
+
+       tmpx = ( a * lx[count] * lx[count] + c ) * lx[count] + ( a * lx[count] * ly[count] -sigma * lz[count]) * ly[count] + ( a * lx[count] * lz[count] + s * ly[count] ) * lz[count];
+       tmpy = ( a * lx[count] * ly[count] + s * lz[count]) * lx[count] + ( a * ly[count] * ly[count] + c) * ly[count] + ( a * ly[count] * lz[count] - s * lx[count] ) * lz[count];
+       tmpz = ( a * lx[count] * lz[count] - s * ly[count]) * lx[count] + ( a * ly[count] * lz[count] + s * lx[count]) * ly[count] + ( a * lz[count] * lz[count] + c) * lz[count];
+
+       lx[count] = tmpx * norm;
+       ly[count] = tmpy * norm;
+       lz[count] = tmpz * norm;
+
+       /*[vx' vy' vz'] = R [vx vy vz]*/
+        normv = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count])
+        lvx[count] /= normv;
+        lvy[count] /= normv;
+        lvz[count] /= normv;
+
+        tmpvx = ( a * lvx[count] * lvx[count] + c ) * lvx[count] + ( a * lvx[count] * lvy[count] -sigma * lvz[count]) * lvy[count] + ( a * lvx[count] * lvz[count] + s * lvy[count] ) * lvz[count];
+        tmpvy = ( a * lvx[count] * lvy[count] + s * lvz[count]) * lvx[count] + ( a * lvy[count] * lvy[count] + c) * lvy[count] + ( a * lvy[count] * lvz[count] - s * lvx[count] ) * lvz[count];
+        tmpvz = ( a * lvx[count] * lvz[count] - s * lvy[count]) * lvx[count] + ( a * lvy[count] * lvz[count] + s * lvx[count]) * lvy[count] + ( a * lvz[count] * lvz[count] + c) * lvz[count];
+
+        lvx[count] = tmpvx * normv;
+        lvy[count] = tmpvy * normv;
+        lvz[count] = tmpvz * normv;
+
        count++;
      }
      radius += INC_R_RING;
    }
+
 
   cudaMemcpy(x, lx, (size_t) n * sizeof(double), cudaMemcpyHostToDevice);
   cudaMemcpy(y, ly, (size_t) n * sizeof(double), cudaMemcpyHostToDevice);
