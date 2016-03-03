@@ -270,9 +270,9 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
 
         rotate(lx + count, ly + count, lz + count, 0, 0, 1, omega);
         norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
-        n1 = lx / norm;
-        n2 = ly / norm;
-        n3 = lz / norm;
+        n1 = lx[count] / norm;
+        n2 = ly[count] / norm;
+        n3 = lz[count] / norm;
         rotate(lx + count, ly + count, lz + count, n1, n2, n3, sigma);
 
         lx[count] += cx;
@@ -281,9 +281,9 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
 
         rotate(lvx + count, lvy + count, lvz + count, 0, 0, 1, omega);
         norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
-        n1 = lvx / norm;
-        n2 = lvy / norm;
-        n3 = lvz / norm;
+        n1 = lvx[count] / norm;
+        n2 = lvy[count] / norm;
+        n3 = lvz[count] / norm;
         rotate(lvx + count, lvy + count, lvz + count, n1, n2, n3, sigma);
 
         count++;
@@ -319,12 +319,11 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lvy[count] = cvy + velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = cvz;
 
-
        rotate(lx + count, ly + count, lz + count, 0, 0, 1, omega);
        norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
-       n1 = lx / norm;
-       n2 = ly / norm;
-       n3 = lz / norm;
+       n1 = lx[count] / norm;
+       n2 = ly[count] / norm;
+       n3 = lz[count] / norm;
        rotate(lx + count, ly + count, lz + count, n1, n2, n3, sigma);
 
        lx[count] += cx;
@@ -333,9 +332,9 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
 
        rotate(lvx + count, lvy + count, lvz + count, 0, 0, 1, omega);
        norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
-       n1 = lvx / norm;
-       n2 = lvy / norm;
-       n3 = lvz / norm;
+       n1 = lvx[count] / norm;
+       n2 = lvy[count] / norm;
+       n3 = lvz[count] / norm;
        rotate(lvx + count, lvy + count, lvz + count, n1, n2, n3, sigma);
 
        count++;
