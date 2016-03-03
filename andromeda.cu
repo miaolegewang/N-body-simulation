@@ -242,8 +242,8 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
      }
      radius += INC_R_RING;
    }
-   lx[count] = lx[0] + radius * sqrt(2.0);
-   ly[count] = ly[0] + radius * sqrt(2.0);
+   lx[count] = lx[0] + radius * 3.0;
+   ly[count] = ly[0] + radius * 4.0;
    lz[count] = lz[0];
    lvx[count] = lvy[count] = lvz[count] = 0.0;
    cx = lx[count];
