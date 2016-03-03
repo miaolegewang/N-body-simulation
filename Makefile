@@ -35,6 +35,11 @@ ifdef mcore
 	CFLAGS += -DMCORE=1
 endif
 
+# determine whether to rotate the galaxy
+ifdef nr
+  CFLAGS += -DNR=1
+endif
+
 # add libraries
 LIBRARY = -lm
 

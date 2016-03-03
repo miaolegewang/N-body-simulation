@@ -20,7 +20,7 @@
 #ifndef BLOCKSIZE
   #define BLOCKSIZE 256
 #endif
-#define SOFTPARAMETER 0.0000001
+#define SOFTPARAMETER 0.00000001
 #define AU 149597870700.0
 #define R (77871.0 * 1000.0 / AU)
 #define G (4.0 * pow(PI, 2) / pow(365.0, 2) * 285.8860e-06)
@@ -33,7 +33,7 @@
 #define NUM_P_BASE 12             // Number of particles in the first ring
 #define INC_NUM_P 3               // increment of number of particles each step
 #define INC_R_RING (0.5 * R)      // increment of radius of rings each step
-#define PMASS 0.1e-06             // mass of each particle
+#define PMASS 0.1e-04             // mass of each particle
 #define V_PARAMTER 0.8            // Parameter adding to initial velocity to make it elliptic
 
 /*
@@ -134,21 +134,21 @@ int main(int argc, char *argv[])
   **  because we print using kernel function
   ** Use numOfBlocks instead of n to simplify the kernel function
   */
-  const unsigned int extra = numOfBlocks * BLOCKSIZE;
+  const unsigned int extra = numOfBlocks * BLOCKSIZE - n;
   cudaMalloc((void**) &x, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMemset((void**) x + n, 0.0, (size_t)(extra * sizeof(double)));
   cudaMalloc((void**) &y, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMemset((void**) y + n, 0.0, (size_t)(extra * sizeof(double)));
   cudaMalloc((void**) &z, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMemset((void**) z + n, 0.0, (size_t)(extra * sizeof(double)));
   cudaMalloc((void**) &vx, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMemset((void**) vx + n, 0.0, (size_t)(extra * sizeof(double)));
   cudaMalloc((void**) &vy, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMemset((void**) vy + n, 0.0, (size_t)(extra * sizeof(double)));
   cudaMalloc((void**) &vz, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMemset((void**) vz + n, 0.0, (size_t)(extra * sizeof(double)));
   cudaMalloc((void**) &mass, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMemset((void**) mass + n, 0.0, (size_t)(extra * sizeof(double)));
+  cudaMemset((void**) x + n, 0, (size_t)(extra * sizeof(double)));
+  cudaMemset((void**) y + n, 0, (size_t)(extra * sizeof(double)));
+  cudaMemset((void**) z + n, 0, (size_t)(extra * sizeof(double)));
+  cudaMemset((void**) vx + n, 0, (size_t)(extra * sizeof(double)));
+  cudaMemset((void**) vy + n, 0, (size_t)(extra * sizeof(double)));
+  cudaMemset((void**) vz + n, 0, (size_t)(extra * sizeof(double)));
+  cudaMemset((void**) mass + n, 0, (size_t)(extra * sizeof(double)));
 
   /*
    *  If MCORE is defined, use kernel function to setup
@@ -254,12 +254,13 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    *  Setup mass of each particles (including center mass)
    *
    */
+  int numofp1 = NUM_P_BASE * NUM_OF_RING_1 + (NUM_OF_RING_1 - 1) * INC_NUM_P * NUM_OF_RING_1 / 2 + 1;
   lmass[0] = MASS_1;    // Set the mass of center mass of 1st galaxy
-  for(int i = 1; i < NUM_OF_RING_1 + 1; i++){
+  for(int i = 1; i < numofp1; i++){
     lmass[i] = PMASS;
   }
-  lmass[NUM_OF_RING_1 + 1] = MASS_2;
-  for(int i = NUM_OF_RING_1 + 2; i < n; i++){
+  lmass[numofp1] = MASS_2;
+  for(int i = numofp1 + 1; i < n; i++){
     lmass[i] = PMASS;
   }
 
@@ -289,9 +290,10 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lvy[count] = velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = 0.0;
 
+#ifndef NR
        norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
        rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
-
+#endif
        lx[count] += cx;
        ly[count] += cy;
        lz[count] += cz;
@@ -299,9 +301,10 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        /*
         *    TODO: set up initial condition for velocity
         */
+#ifndef NR
        norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
        rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
-
+#endif
        count++;
      }
      radius += INC_R_RING;
@@ -334,10 +337,10 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
       lvx[count] = - velocity * sin(piece * j) * V_PARAMTER;
       lvy[count] = velocity * cos(piece * j) * V_PARAMTER;
       lvz[count] = 0.0;
-
+#ifndef NR
       norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
       rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
-
+#endif
       lx[count] += cx;
       ly[count] += cy;
       lz[count] += cz;
@@ -345,9 +348,10 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
       /*
        *  TODO: setup initial conditions for velocity
        */
+#ifndef NR
       norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
       rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
-
+#endif
       count++;
     }
     radius += INC_R_RING;
@@ -434,7 +438,8 @@ __global__ void accel_3_body(int n, double* x, double* y, double* z, double* vx,
     lz[tdx] = z[i * BLOCKSIZE + tdx];
     lm[tdx] = mass[i * BLOCKSIZE + tdx];
     __syncthreads();
-    for(int j = 0; j < BLOCKSIZE; j++){
+    int itrSize = min(BLOCKSIZE, n - i * BLOCKSIZE);
+    for(int j = 0; j < itrSize; j++){
       norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
       ax += - G * lm[j] * (thisX - lx[j]) / norm;
       ay += - G * lm[j] * (thisY - ly[j]) / norm;
@@ -446,9 +451,9 @@ __global__ void accel_3_body(int n, double* x, double* y, double* z, double* vx,
     double norm1 = pow(SOFTPARAMETER + pow(thisX - x[0], 2) + pow(thisY - y[0], 2) + pow(thisZ - z[0], 2), 1.5);
     double norm2 = pow(SOFTPARAMETER + pow(thisX - x[numofp1], 2) + pow(thisY - y[numofp1], 2) + pow(thisZ - z[numofp1], 2), 1.5);
     ;
-    ax += - G * MASS_1 * (thisX - x[0]) / norm1 - G * MASS_2 * (thisX - x[numofp1]) / norm2;
-    ay += - G * MASS_1 * (thisY - y[0]) / norm1 - G * MASS_2 * (thisY - y[numofp1]) / norm2;
-    az += - G * MASS_1 * (thisZ - z[0]) / norm1 - G * MASS_2 * (thisZ - z[numofp1]) / norm2;
+    ax = - G * MASS_1 * (thisX - x[0]) / norm1 - G * MASS_2 * (thisX - x[numofp1]) / norm2;
+    ay = - G * MASS_1 * (thisY - y[0]) / norm1 - G * MASS_2 * (thisY - y[numofp1]) / norm2;
+    az = - G * MASS_1 * (thisZ - z[0]) / norm1 - G * MASS_2 * (thisZ - z[numofp1]) / norm2;
   }
   if(serial < n){
     vx[serial] += 0.5 * dt * ax;
