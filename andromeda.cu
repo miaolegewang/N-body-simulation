@@ -225,6 +225,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    for(int i = 0; i < NUM_OF_RING_1; i++){
      int numOfP = NUM_P_BASE + INC_NUM_P * i;
      double piece = 2.0 * PI / numOfP;
+     double velocity = sqrt(G * MASS_1 / radius);
      for(int j = 0; j < numOfP; j++){
        lx[count] = cx + radius * cos(piece * j);
        ly[count] = cy + radius * sin(piece * j);
@@ -241,7 +242,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    lz[count] = lz[0];
    lvx[count] = lvy[count] = lvz[count] = 0.0;
    cx = lx[count];
-   cy = ly[count]
+   cy = ly[count];
    cz = lz[count];
    cvx = lvx[count];
    cvy = lvy[count];
@@ -250,6 +251,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    radius = RING_BASE_2;
    for(int i = 0; i < NUM_OF_RING_2; i++){
      int numOfP = NUM_P_BASE + INC_NUM_P * i;
+     double velocity = sqrt(G * MASS_2 / radius);
      double piece = 2.0 * PI / numOfP;
      for(int j = 0; j < numOfP; j++){
        lx[count] = cx + radius * cos(piece * j);
@@ -294,7 +296,6 @@ __global__ void accel(int n, double *x, double *y, double *z, double *vx, double
   __shared__ double lx[BLOCKSIZE];
   __shared__ double ly[BLOCKSIZE];
   __shared__ double lz[BLOCKSIZE];
-  double MASS = 1.0 / n;
 
   if(serial < n){
     double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = x[serial], thisY = y[serial], thisZ = z[serial];
