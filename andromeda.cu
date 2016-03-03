@@ -192,6 +192,26 @@ __global__ void initialConditions(int n, double* x, double* y, double* z, double
   /*  TODO    */
 }
 
+void rotate(double* x, double* y, double *z, double n1, double n2, double n3, double theta){
+
+   double norm, tmpx, tmpy, tmpz, normv, tmpvx, tmpvy, tmpvz;
+   double a, c, s, sigma, sigma1;
+
+   sigma = -theta;
+   c = cos(sigma);
+   s = sin(sigma);
+   a = 1 - cos(sigma);
+
+
+  tmpx = ( a * n1 * n1 + c ) * (*x) + ( a * n1 * n2 -sigma * n3) * (*y) + ( a * n1 * n3 + s * n2 ) * (*z);
+  tmpy = ( a * n1 * n2 + s * n3) * (*x) + ( a * n2 * n2 + c) * (*y) + ( a * n2 * n3 - s * n1 ) * (*z);
+  tmpz = ( a * n1 * n3 - s * n2) * (*x) + ( a * n2 * n3 + s * n1) * (*y) + ( a * n3 * n3 + c) * (*z);
+
+  (*x) = tmpx;
+  (*y) = tmpy;
+  (*z) = tmpz;
+
+}
 
 void initialCondition_host(int n, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* mass){
   srand(time(0));
@@ -228,14 +248,11 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    double radius = RING_BASE_1;
    int count = 1;
 
-   double norm, tmpx, tmpy, tmpz, normv, tmpvx, tmpvy, tmpvz;
-   double a, c, s, sigma, sigma1;
+   double omega;
+   double sigma;
 
-   sigma = -2.0 * PI/3;
-   sigma1 = -PI/3.0;
-   c = cos(sigma1);
-   s = sin(sigma1);
-   a = 1 - cos(sigma);
+   omega = -PI/6.0;
+   sigma = PI/3.0;
 
    for(int i = 0; i < NUM_OF_RING_1; i++){
      int numOfP = NUM_P_BASE + INC_NUM_P * i;
@@ -248,47 +265,30 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lvx[count] = - velocity * sin(piece * j) * V_PARAMTER;
        lvy[count] = velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = 0.0;
-       //
-      //  /*[vx' vy' vz'] = R [vx vy vz]*/
-      //   norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
-      //   lx[count] /= norm;
-      //   ly[count] /= norm;
-      //   lz[count] /= norm;
-       //
-      //   tmpx = ( a * lx[count] * lx[count] + c ) * lx[count] + ( a * lx[count] * ly[count] -sigma * lz[count]) * ly[count] + ( a * lx[count] * lz[count] + s * ly[count] ) * lz[count];
-      //   tmpy = ( a * lx[count] * ly[count] + s * lz[count]) * lx[count] + ( a * ly[count] * ly[count] + c) * ly[count] + ( a * ly[count] * lz[count] - s * lx[count] ) * lz[count];
-      //   tmpz = ( a * lx[count] * lz[count] - s * ly[count]) * lx[count] + ( a * ly[count] * lz[count] + s * lx[count]) * ly[count] + ( a * lz[count] * lz[count] + c) * lz[count];
-       //
-      //   lx[count] = cx + tmpx * norm;
-      //   ly[count] = cy + tmpy * norm;
-      //   lz[count] = cz + tmpz * norm;
-       //
-      //   /*[vx' vy' vz'] = R [vx vy vz]*/
-      //    normv = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
-      //    lvx[count] /= normv;
-      //    lvy[count] /= normv;
-      //    lvz[count] /= normv;
-       //
-      //    tmpvx = ( a * lvx[count] * lvx[count] + c ) * lvx[count] + ( a * lvx[count] * lvy[count] -sigma * lvz[count]) * lvy[count] + ( a * lvx[count] * lvz[count] + s * lvy[count] ) * lvz[count];
-      //    tmpvy = ( a * lvx[count] * lvy[count] + s * lvz[count]) * lvx[count] + ( a * lvy[count] * lvy[count] + c) * lvy[count] + ( a * lvy[count] * lvz[count] - s * lvx[count] ) * lvz[count];
-      //    tmpvz = ( a * lvx[count] * lvz[count] - s * lvy[count]) * lvx[count] + ( a * lvy[count] * lvz[count] + s * lvx[count]) * lvy[count] + ( a * lvz[count] * lvz[count] + c) * lvz[count];
-       //
-      //    lvx[count] = tmpvx * normv;
-      //    lvy[count] = tmpvy * normv;
-      //    lvz[count] = tmpvz * normv;
-       //
+
+        rotate(lx + count, ly + count, lz + count, 0, 0, 1, omega);
+        norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
+        n1 = lx / norm;
+        n2 = ly / norm;
+        n3 = lz / norm;
+        rotate(lx + count, ly + count, lz + count, n1, n2, n3, sigma);
+
+        lx[count] += cx;
+        ly[count] += cy;
+        lz[count] += cz;
+
+        rotate(lvx + count, lvy + count, lvz + count, 0, 0, 1, omega);
+        norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
+        n1 = lvx / norm;
+        n2 = lvy / norm;
+        n3 = lvz / norm;
+        rotate(lvx + count, lvy + count, lvz + count, n1, n2, n3, sigma);
 
         count++;
      }
      radius += INC_R_RING;
    }
 
-
-    sigma = 2.0 * PI/3;
-    sigma1 = -PI/3.0;
-    c = cos(sigma1);
-    s = sin(sigma1);
-    a = 1 - cos(sigma);
 
    lx[count] = lx[0] + radius * 3.0;
    ly[count] = ly[0] + radius * 4.0;
@@ -302,6 +302,9 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    cvz = lvz[count];
    count++;
    radius = RING_BASE_2;
+
+    omega = -PI/6.0;
+    sigma = PI/3.0;
    for(int i = 0; i < NUM_OF_RING_2; i++){
      int numOfP = NUM_P_BASE + INC_NUM_P * i;
      double velocity = sqrt(G * MASS_2 / radius);
@@ -313,33 +316,25 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lvx[count] = cvx - velocity * sin(piece * j) * V_PARAMTER;
        lvy[count] = cvy + velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = cvz;
-       //
-      //  norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
-      //  lx[count] /= norm;
-      //  ly[count] /= norm;
-      //  lz[count] /= norm;
-       //
-      //  tmpx = ( a * lx[count] * lx[count] + c ) * lx[count] + ( a * lx[count] * ly[count] -sigma * lz[count]) * ly[count] + ( a * lx[count] * lz[count] + s * ly[count] ) * lz[count];
-      //  tmpy = ( a * lx[count] * ly[count] + s * lz[count]) * lx[count] + ( a * ly[count] * ly[count] + c) * ly[count] + ( a * ly[count] * lz[count] - s * lx[count] ) * lz[count];
-      //  tmpz = ( a * lx[count] * lz[count] - s * ly[count]) * lx[count] + ( a * ly[count] * lz[count] + s * lx[count]) * ly[count] + ( a * lz[count] * lz[count] + c) * lz[count];
-       //
-      //  lx[count] = tmpx * norm;
-      //  ly[count] = tmpy * norm;
-      //  lz[count] = tmpz * norm;
-       //
-      //  /*[vx' vy' vz'] = R [vx vy vz]*/
-      //   normv = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
-      //   lvx[count] /= normv;
-      //   lvy[count] /= normv;
-      //   lvz[count] /= normv;
-       //
-      //   tmpvx = ( a * lvx[count] * lvx[count] + c ) * lvx[count] + ( a * lvx[count] * lvy[count] -sigma * lvz[count]) * lvy[count] + ( a * lvx[count] * lvz[count] + s * lvy[count] ) * lvz[count];
-      //   tmpvy = ( a * lvx[count] * lvy[count] + s * lvz[count]) * lvx[count] + ( a * lvy[count] * lvy[count] + c) * lvy[count] + ( a * lvy[count] * lvz[count] - s * lvx[count] ) * lvz[count];
-      //   tmpvz = ( a * lvx[count] * lvz[count] - s * lvy[count]) * lvx[count] + ( a * lvy[count] * lvz[count] + s * lvx[count]) * lvy[count] + ( a * lvz[count] * lvz[count] + c) * lvz[count];
-       //
-      //   lvx[count] = tmpvx * normv;
-      //   lvy[count] = tmpvy * normv;
-      //   lvz[count] = tmpvz * normv;
+
+       
+       rotate(lx + count, ly + count, lz + count, 0, 0, 1, omega);
+       norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
+       n1 = lx / norm;
+       n2 = ly / norm;
+       n3 = lz / norm;
+       rotate(lx + count, ly + count, lz + count, n1, n2, n3, sigma);
+
+       lx[count] += cx;
+       ly[count] += cy;
+       lz[count] += cz;
+
+       rotate(lvx + count, lvy + count, lvz + count, 0, 0, 1, omega);
+       norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
+       n1 = lvx / norm;
+       n2 = lvy / norm;
+       n3 = lvz / norm;
+       rotate(lvx + count, lvy + count, lvz + count, n1, n2, n3, sigma);
 
        count++;
      }
