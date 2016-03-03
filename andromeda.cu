@@ -225,7 +225,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    lz[0] = (double)rand() / RAND_MAX;
    lvx[0] = lvy[0] = lvz[0] = 0.0;
    double cx = lx[0], cy = ly[0], cz = lz[0], cvx = lvx[0], cvy = lvy[0], cvz = lvz[0];
-   int radius = RING_BASE_1;
+   double radius = RING_BASE_1;
    int count = 1;
    for(int i = 0; i < NUM_OF_RING_1; i++){
      int numOfP = NUM_P_BASE + INC_NUM_P * i;
