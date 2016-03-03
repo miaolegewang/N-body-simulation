@@ -43,7 +43,7 @@ CFLAGS += $(BLOCKING) -O3
 
 OBJECTS = andromeda.cu
 # defining target for make
-default:
+default: andromeda
 all: clean andromeda
 
 andromeda: $(OBJECTS)
