@@ -24,17 +24,23 @@
 #define AU 149597870700.0
 #define R (77871.0 * 1000.0 / AU)
 #define G (4.0 * pow(PI, 2) / pow(365.0, 2) * 285.8860e-06)
-#define MASS_1 1.0                // Center mass of 1st galaxy
-#define MASS_2 1.0                // Center mass of 2nd galaxy
+#define MASS_1 10e11               // Center mass of 1st galaxy
+#define MASS_2 10e11                // Center mass of 2nd galaxy
 #define NUM_OF_RING_1 20         // Number of rings in 1st galaxy
 #define NUM_OF_RING_2 20          // Number of rings in 2nd galaxy
-#define RING_BASE_1 (R * 2)       // Radius of first ring in 1st galaxy
-#define RING_BASE_2 (R * 2)       // Radius of first ring in 2nd galaxy
+// #define RING_BASE_1 (R * 0.2)       // Radius of first ring in 1st galaxy
+// #define RING_BASE_2 (R * 0.2)       // Radius of first ring in 2nd galaxy
 #define NUM_P_BASE 12             // Number of particles in the first ring
 #define INC_NUM_P 3               // increment of number of particles each step
-#define INC_R_RING (0.5 * R)      // increment of radius of rings each step
+// #define INC_R_RING (0.5 * R)      // increment of radius of rings each step
 #define PMASS 0.1e-04             // mass of each particle
 #define V_PARAMTER 0.8            // Parameter adding to initial velocity to make it elliptic
+#define RMIN 5.15662016e9
+#define ECCEN 0.5
+#define RMAX ((1.0 + ECCEN) * RMIN / (1.0 - ECCEN))
+#define RING_BASE_1 (RMIN * 0.2)       // Radius of first ring in 1st galaxy
+#define RING_BASE_2 (RMIN * 0.2)       // Radius of first ring in 2nd galaxy
+#define INC_R_RING (RMIN * 0.05)      // increment of radius of rings each step
 
 /*
  *  Major Function Declarations Section
@@ -268,10 +274,19 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    *  Setup position of each particles
    *
    */
-   lx[0] = (double)rand() / RAND_MAX;
-   ly[0] = (double)rand() / RAND_MAX;
-   lz[0] = (double)rand() / RAND_MAX;
-   lvx[0] = lvy[0] = lvz[0] = 0.0;
+   // lx[0] = (double)rand() / RAND_MAX;
+   // ly[0] = (double)rand() / RAND_MAX;
+   // lz[0] = (double)rand() / RAND_MAX;
+   // lvx[0] = lvy[0] = lvz[0] = 0.0;
+
+   lx[0] = -RMAX;
+   ly[0] = 0.0;
+   lz[0] = 0.0;
+   lvx[0] = 0.0;
+   lvy[0] = -sqrt((G * MASS_2 / 4.0) * ((1.0 - ECCEN)/(1.0 + ECCEN)) * ((1 - ECCEN)/(RMIN)));
+   lvz[0] = 0.0;
+
+
    double cx = lx[0], cy = ly[0], cz = lz[0], cvx = lvx[0], cvy = lvy[0], cvz = lvz[0];
    double radius = RING_BASE_1;
    int count = 1;
@@ -311,10 +326,18 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    }
 
 
-   lx[count] = lx[0] + radius * 3.0;
-   ly[count] = ly[0] + radius * 4.0;
-   lz[count] = lz[0];
-   lvx[count] = lvy[count] = lvz[count] = 0.0;
+   // lx[count] = lx[0] + radius * 3.0;
+   // ly[count] = ly[0] + radius * 4.0;
+   // lz[count] = lz[0];
+   // lvx[count] = lvy[count] = lvz[count] = 0.0;
+
+   lx[count] = RMAX;
+   ly[count] = 0.0;
+   lz[count] = 0.0;
+   lvx[count] = 0.0;
+   lvy[count] = sqrt((G * MASS_2 / 4.0) * ((1.0 - ECCEN)/(1.0 + ECCEN)) * ((1 - ECCEN)/(RMIN)));
+   lvz[count] = 0.0;
+
    cx = lx[count];
    cy = ly[count];
    cz = lz[count];
