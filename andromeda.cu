@@ -292,7 +292,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    // lz[0] = (double)rand() / RAND_MAX;
    // lvx[0] = lvy[0] = lvz[0] = 0.0;
 
-   lx[0] = -RMAX;
+   lx[0] = -RMAX / 2;
    ly[0] = 0.0;
    lz[0] = 0.0;
    lvx[0] = 0.0;
@@ -347,7 +347,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    // lz[count] = lz[0];
    // lvx[count] = lvy[count] = lvz[count] = 0.0;
 
-   lx[count] = RMAX;
+   lx[count] = RMAX / 2;
    ly[count] = 0.0;
    lz[count] = 0.0;
    lvx[count] = 0.0;
