@@ -1,0 +1,229 @@
+% ****** Start of file apssamp.tex ******
+%
+%   This file is part of the APS files in the REVTeX 4.1 distribution.
+%   Version 4.1r of REVTeX, August 2010
+%
+%   Copyright (c) 2009, 2010 The American Physical Society.
+%
+%   See the REVTeX 4 README file for restrictions and more information.
+%
+% TeX'ing this file requires that you have AMS-LaTeX 2.0 installed
+% as well as the rest of the prerequisites for REVTeX 4.1
+%
+% See the REVTeX 4 README file
+% It also requires running BibTeX. The commands are as follows:
+%
+%  1)  latex apssamp.tex
+%  2)  bibtex apssamp
+%  3)  latex apssamp.tex
+%  4)  latex apssamp.tex
+%
+\documentclass[%
+ reprint,
+%superscriptaddress,
+%groupedaddress,
+%unsortedaddress,
+%runinaddress,
+%frontmatterverbose, 
+%preprint,
+%showpacs,preprintnumbers,
+%nofootinbib,
+%nobibnotes,
+%bibnotes,
+ amsmath,amssymb,
+ aps,
+%pra,
+%prb,
+%rmp,
+%prstab,
+%prstper,
+%floatfix,
+]{revtex4-1}
+
+
+
+
+\usepackage{graphicx}% Include figure files
+\usepackage{dcolumn}% Align table columns on decimal point
+\usepackage{bm}% bold math
+\usepackage{natbib}
+\usepackage{graphicx}% Include figure files
+
+%\usepackage{hyperref}% add hypertext capabilities
+%\usepackage[mathlines]{lineno}% Enable numbering of text and display math
+%\linenumbers\relax % Commence numbering lines
+
+%\usepackage[showframe,%Uncomment any one of the following lines to test 
+%%scale=0.7, marginratio={1:1, 2:3}, ignoreall,% default settings
+%%text={7in,10in},centering,
+%%margin=1.5in,
+%%total={6.5in,8.75in}, top=1.2in, left=0.9in, includefoot,
+%%height=10in,a5paper,hmargin={3cm,0.8in},
+%]{geometry}
+
+\begin{document}
+
+\preprint{APS/123-QED}
+
+\title{simulation of blablabla
+}% Force line breaks with \\
+%\thanks{A footnote to the article title}%
+
+\author{Lu Yu} 
+\email{luyu@ucsd.edu}
+\author{Zhongrong Jian}
+ \email{zhj@ucsd.edu}
+ \author{Chen Lai}
+ \email{chl588@ucsd.edu}
+\affiliation{%
+ UC San Diego\\
+% This line break forced with \textbackslash\textbackslash
+}%
+
+%\collaboration{MUSO Collaboration}%\noaffiliation
+%
+%\author{Charlie Author}
+% \homepage{http://www.Second.institution.edu/~Charlie.Author}
+%\affiliation{
+% Second institution and/or address\\
+% This line break forced% with \\
+%}%
+%\affiliation{
+% Third institution, the second for Charlie Author
+%}%
+%\author{Delta Author}
+%\affiliation{%
+% Authors' institution and/or address\\
+% This line break forced with \textbackslash\textbackslash
+%}%
+%
+%\collaboration{CLEO Collaboration}%\noaffiliation
+
+\date{\today}% It is always \today, today,
+             %  but any date may be explicitly specified
+
+
+
+
+
+
+
+
+
+
+\begin{abstract}
+Abstract. we will simulate collision between A and B. first we simulate attena so our simulation runs fine. Then simulate andromeda. blablabla 
+%\begin{description}
+%\item[Usage]
+%Secondary publications and information retrieval purposes.
+%\item[PACS numbers]
+%May be entered using the \verb+\pacs{#1}+ command.
+%\item[Structure]
+%You may use the \texttt{description} environment to structure your abstract;
+%use the optional argument of the \verb+\item+ command to give the category of each item. 
+%\end{description}
+\end{abstract}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\pacs{Valid PACS appear here}% PACS, the Physics and Astronomy
+                             % Classification Scheme.
+%\keywords{Suggested keywords}%Use showkeys class option if keyword
+                              %display desired
+\maketitle
+
+%\tableofcontents
+
+\section{\label{sec:level1}Overview}
+
+. 
+
+
+%This sample document demonstrates proper use of REV\TeX~4.1 (and
+%\LaTeXe) in manuscripts prepared for submission to APS
+%journals. Further information can be found in the REV\TeX~4.1
+%documentation included in the distribution or available at
+%\url{http://authors.aps.org/revtex4/}.
+%
+%When commands are referred to in this example file, they are always
+%shown with their required arguments, using normal \TeX{} format. In
+%this format, \verb+#1+, \verb+#2+, etc. stand for required
+%author-supplied arguments to commands. For example, in
+%\verb+\section{#1}+ the \verb+#1+ stands for the title text of the
+%author's section heading, and in \verb+\title{#1}+ the \verb+#1+
+%stands for the title text of the paper.
+%
+%Line breaks in section headings at all levels can be introduced using
+%\textbackslash\textbackslash. A blank input line tells \TeX\ that the
+%paragraph has ended. Note that top-level section headings are
+%automatically uppercased. If a specific letter or word should appear in
+%lowercase instead, you must escape it using \verb+\lowercase{#1}+ as
+%in the word ``via'' above.
+
+
+
+
+
+
+
+
+
+
+\section{\label{sec:level1}Physics part}
+
+Model(treat it as toy model. 12 rings, only consider 3 body problem)
+Initial condition(rotation matrix, initial velociy)(atennna andromeda).
+
+\subsection{\label{sec:level1}Model(atenna, andromeda)}
+
+Model(treat it as toy model. 12 rings, only consider 3 body problem)
+
+\subsection{\label{sec:level1}Initial condition(atenna, andromeda)}
+
+Initial condition(rotation matrix, initial velociy)(atennna andromeda).
+
+
+
+
+\section{\label{sec:level1}parallel(cuda, matlab)
+}
+
+\subsection{\label{sec:level1}Cuda}
+
+Where to use cuda. leapfrog, printstate??
+
+
+\subsection{\label{sec:level1}Matlab}
+
+We also speedup the animaition by using multhead in matlab
+
+
+
+\section{\label{sec:level1}Result}
+
+\subsection{\label{sec:level1}Attnna}
+
+
+
+\subsection{\label{sec:level1}andormeda}
+
+
+\bibliographystyle{apsrev4-1}
+\bibliography{ref}
+\end{document}
+%
+% ****** End of file apssamp.tex ******
+
