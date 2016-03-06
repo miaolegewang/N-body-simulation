@@ -20,29 +20,29 @@
 #ifndef BLOCKSIZE
   #define BLOCKSIZE 256
 #endif
-#define SOFTPARAMETER 0.00000001
+//#define SOFTPARAMETER 0.2 * RMIN
 // #define AU 149597870700.0
 // #define R (77871.0 * 1000.0 / AU)
 // #define G (4.0 * pow(PI, 2))
 #define G 0.287915013
-#define MASS_1 1              // Center mass of 1st galaxy
-#define MASS_2 1                // Center mass of 2nd galaxy
-#define NUM_OF_RING_1 20         // Number of rings in 1st galaxy
-#define NUM_OF_RING_2 20          // Number of rings in 2nd galaxy
+#define MASS_1 1000              // Center mass of 1st galaxy
+#define MASS_2 1000                // Center mass of 2nd galaxy
+#define NUM_OF_RING_1 12         // Number of rings in 1st galaxy
+#define NUM_OF_RING_2 12          // Number of rings in 2nd galaxy
 // #define RING_BASE_1 (R * 0.2)       // Radius of first ring in 1st galaxy
 // #define RING_BASE_2 (R * 0.2)       // Radius of first ring in 2nd galaxy
 #define NUM_P_BASE 12             // Number of particles in the first ring
 #define INC_NUM_P 3               // increment of number of particles each step
 // #define INC_R_RING (0.5 * R)      // increment of radius of rings each step
-#define PMASS 0.1e-04             // mass of each particle
-#define V_PARAMTER 0.8            // Parameter adding to initial velocity to make it elliptic
+#define PMASS 1             // mass of each particle
+#define V_PARAMTER 1            // Parameter adding to initial velocity to make it elliptic
 #define RMIN 1
 #define ECCEN 0.5
 #define RMAX ((1.0 + ECCEN) * RMIN / (1.0 - ECCEN))
 #define RING_BASE_1 (RMIN * 0.2)       // Radius of first ring in 1st galaxy
 #define RING_BASE_2 (RMIN * 0.2)       // Radius of first ring in 2nd galaxy
 #define INC_R_RING (RMIN * 0.05)      // increment of radius of rings each step
-
+#define SOFTPARAMETER 0.000001
 /*
  *  Major Function Declarations Section
  *
@@ -126,8 +126,8 @@ int main(int argc, char *argv[])
   int mstep, nout;
   double dt, *x, *y, *z, *vx, *vy, *vz, *mass;
   mstep = argc > 1 ? atoi(argv[1]) : 100;
-  nout = argc > 2 ? atoi(argv[2]) : 1;
-  dt = argc > 3 ? atof(argv[3]) : 2 * PI * RMIN^2 /sqrt(G * MASS_1) / 300.0;
+  nout = argc > 2 ? atoi(argv[2]) : 20;
+  dt = argc > 3 ? atof(argv[3]) : 2 * PI * RMIN * RMIN /sqrt(G * MASS_1) / 500.0;
   int n = (NUM_P_BASE + NUM_P_BASE + (NUM_OF_RING_1 - 1) * INC_NUM_P) * NUM_OF_RING_1 / 2 + (NUM_P_BASE + NUM_P_BASE + (NUM_OF_RING_2 - 1) * INC_NUM_P) * NUM_OF_RING_2 / 2 + 2;
   /*
    *  setup execution configuration
@@ -321,6 +321,9 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
        rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
 #endif
+       lvx[count] += cvx;
+       lvy[count] += cvy;
+       lvz[count] += cvz;
        count++;
      }
      radius += INC_R_RING;
@@ -376,6 +379,10 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
       norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
       rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
 #endif
+      lvx[count] += cvx;
+      lvy[count] += cvy;
+      lvz[count] += cvz;
+
       count++;
     }
     radius += INC_R_RING;
