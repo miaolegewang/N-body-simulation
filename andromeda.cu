@@ -1,8 +1,20 @@
 /*
-**  This program is a CUDA C program simulating the N-body system
-**    of two galaxies as PHY 241 FINAL PROJECTS
-**
-*/
+ *  This program is a CUDA C program simulating the N-body system
+ *    of two galaxies as PHY 241 FINAL PROJECTS
+ *
+ */
+
+/*
+ *  TODO:
+ *    1. andromeda
+ *    2. For accel of center of A, only consider accel from center of B. The same for B.
+ *    3. When the distance between A and B, the soft parameter changed to 0.2Rmin
+ *    4. report
+ *    5. presentation
+ *
+ */
+
+
 #include <cuda.h>
 #include <math.h>
 #include <string.h>
@@ -284,7 +296,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    ly[0] = 0.0;
    lz[0] = 0.0;
    lvx[0] = 0.0;
-   lvy[0] = -sqrt((G * MASS_2 / 4.0) * ((1.0 - ECCEN)/(1.0 + ECCEN)) * ((1 - ECCEN)/(RMIN)));
+   lvy[0] = -sqrt(G * MASS_1 / (12 * RMIN));
    lvz[0] = 0.0;
 
 
@@ -339,7 +351,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    ly[count] = 0.0;
    lz[count] = 0.0;
    lvx[count] = 0.0;
-   lvy[count] = sqrt((G * MASS_2 / 4.0) * ((1.0 - ECCEN)/(1.0 + ECCEN)) * ((1 - ECCEN)/(RMIN)));
+   lvy[count] = sqrt(G * MASS_2 / (12 * RMIN));
    lvz[count] = 0.0;
 
    cx = lx[count];
@@ -456,36 +468,18 @@ __global__ void accel_3_body(int n, double* x, double* y, double* z, double* vx,
    *    Because of SOFTPARAMETER, we dont need to determine if thread is computing against itself
    */
   const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
-  const unsigned int numofp1 = (NUM_P_BASE * 2 + (NUM_OF_RING_1 - 1) * INC_NUM_P) * NUM_OF_RING_1 / 2 + 1;
-  const unsigned int tdx = threadIdx.x;
-  __shared__ double lx[BLOCKSIZE];
-  __shared__ double ly[BLOCKSIZE];
-  __shared__ double lz[BLOCKSIZE];
-  __shared__ double lm[BLOCKSIZE];
-  double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = x[serial], thisY = y[serial], thisZ = z[serial];
-  for(int i = 0; i < gridDim.x; i++){
-    lx[tdx] = x[i * BLOCKSIZE + tdx];
-    ly[tdx] = y[i * BLOCKSIZE + tdx];
-    lz[tdx] = z[i * BLOCKSIZE + tdx];
-    lm[tdx] = mass[i * BLOCKSIZE + tdx];
-    __syncthreads();
-    int itrSize = min(BLOCKSIZE, n - i * BLOCKSIZE);
-    for(int j = 0; j < itrSize; j++){
-      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-      ax += - G * lm[j] * (thisX - lx[j]) / norm;
-      ay += - G * lm[j] * (thisY - ly[j]) / norm;
-      az += - G * lm[j] * (thisZ - lz[j]) / norm;
-    }
-    __syncthreads();
-  }
-  if(serial != 0 && serial != numofp1){
-    double norm1 = pow(SOFTPARAMETER + pow(thisX - x[0], 2) + pow(thisY - y[0], 2) + pow(thisZ - z[0], 2), 1.5);
-    double norm2 = pow(SOFTPARAMETER + pow(thisX - x[numofp1], 2) + pow(thisY - y[numofp1], 2) + pow(thisZ - z[numofp1], 2), 1.5);
-    ;
-    ax = - G * MASS_1 * (thisX - x[0]) / norm1 - G * MASS_2 * (thisX - x[numofp1]) / norm2;
-    ay = - G * MASS_1 * (thisY - y[0]) / norm1 - G * MASS_2 * (thisY - y[numofp1]) / norm2;
-    az = - G * MASS_1 * (thisZ - z[0]) / norm1 - G * MASS_2 * (thisZ - z[numofp1]) / norm2;
-  }
+  const unsigned int numofp1 = NUM_P_BASE * NUM_OF_RING_1 + (NUM_OF_RING_1 - 1) * NUM_OF_RING_1 * INC_NUM_P / 2 + 1;
+  double ax = 0.0, ay = 0.0, az = 0.0, norm1, norm2;
+  double tempsp = (pow(pow(x[0] - x[numofp1], 2) + pow(y[0] - y[numofp1], 2) + pow(z[0] - z[numofp1], 2), 1.5) <= RMIN) ? 0.2 * RMIN : SOFTPARAMETER;
+  double softparameter = (serial == 0 && serial == numofp1) ? tempsp : SOFTPARAMETER;
+  norm1 = pow(softparameter + pow(x[serial] - x[0], 2) + pow(y[serial] - y[0], 2) + pow(z[serial] - z[0], 2), 1.5);
+  norm2 = pow(softparameter + pow(x[serial] - x[numofp1], 2) + pow(y[serial] - y[numofp1], 2) + pow(z[serial] - z[numofp1], 2), 1.5);
+  ax += -G * mass[0] * (x[serial] - x[0]) / norm1;
+  ay += -G * mass[0] * (y[serial] - y[0]) / norm1;
+  az += -G * mass[0] * (z[serial] - z[0]) / norm1;
+  ax += -G * mass[numofp1] * (x[serial] - x[numofp1]) / norm2;
+  ay += -G * mass[numofp1] * (y[serial] - y[numofp1]) / norm2;
+  az += -G * mass[numofp1] * (z[serial] - z[numofp1]) / norm2;
   if(serial < n){
     vx[serial] += 0.5 * dt * ax;
     vy[serial] += 0.5 * dt * ay;

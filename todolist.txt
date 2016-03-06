@@ -1,8 +1,0 @@
-1. andromeda
-2. For accel of center of A, only consider accel from center of B. The same for B.
-3. When the distance between A and B, the soft parameter changed to 0.2Rmin
-4. report
-5. presentation
-
-
-.
