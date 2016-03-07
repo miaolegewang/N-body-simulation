@@ -7,10 +7,8 @@
 /*
  *  TODO:
  *    1. andromeda
- *    2. For accel of center of A, only consider accel from center of B. The same for B.
- *    3. When the distance between A and B, the soft parameter changed to 0.2Rmin
- *    4. report
- *    5. presentation
+ *    2. report
+ *    3. presentation
  *
  */
 
@@ -37,8 +35,8 @@
 // #define R (77871.0 * 1000.0 / AU)
 // #define G (4.0 * pow(PI, 2))
 #define G 0.287915013
-#define MASS_1 1000              // Center mass of 1st galaxy
-#define MASS_2 1000                // Center mass of 2nd galaxy
+#define MASS_1 19.5              // Center mass of 1st galaxy
+#define MASS_2 19.5                // Center mass of 2nd galaxy
 #define NUM_OF_RING_1 12         // Number of rings in 1st galaxy
 #define NUM_OF_RING_2 12          // Number of rings in 2nd galaxy
 // #define RING_BASE_1 (R * 0.2)       // Radius of first ring in 1st galaxy
@@ -285,16 +283,15 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
 
   /*
    *  Setup position of each particles
+   *    First galaxy is M31
+   *    Secon galaxy is Milky way
    *
    */
-   // lx[0] = (double)rand() / RAND_MAX;
-   // ly[0] = (double)rand() / RAND_MAX;
-   // lz[0] = (double)rand() / RAND_MAX;
-   // lvx[0] = lvy[0] = lvz[0] = 0.0;
 
-   lx[0] = -RMAX / 2;
-   ly[0] = 0.0;
-   lz[0] = 0.0;
+   // Galaxy M31 setup
+   lx[0] = -369.8;
+   ly[0] = 615.4;
+   lz[0] = -364.8;
    lvx[0] = 0.0;
    lvy[0] = -sqrt(G * MASS_1 / (12 * RMIN));
    lvz[0] = 0.0;
@@ -304,7 +301,8 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    double radius = RING_BASE_1;
    int count = 1;
 
-   double omega = -PI / 6.0, sigma = PI / 3.0, norm;
+   // omega = 240, sigma = -i
+   double omega = -2 * PI / 3, sigma = PI / 6, norm;
 
    for(int i = 0; i < NUM_OF_RING_1; i++){
      int numOfP = NUM_P_BASE + INC_NUM_P * i;
@@ -341,13 +339,8 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
      radius += INC_R_RING;
    }
 
-
-   // lx[count] = lx[0] + radius * 3.0;
-   // ly[count] = ly[0] + radius * 4.0;
-   // lz[count] = lz[0];
-   // lvx[count] = lvy[count] = lvz[count] = 0.0;
-
-   lx[count] = RMAX / 2;
+   // Milky way setup
+   lx[count] = -8.5;
    ly[count] = 0.0;
    lz[count] = 0.0;
    lvx[count] = 0.0;
@@ -363,8 +356,8 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    count++;
    radius = RING_BASE_2;
 
-   omega = - PI / 6.0;
-   sigma = - PI / 3.0;
+   omega = 0.0;
+   sigma = - PI / 2.0;
    for(int i = 0; i < NUM_OF_RING_2; i++){
     int numOfP = NUM_P_BASE + INC_NUM_P * i;
     double velocity = sqrt(G * MASS_2 / radius);
