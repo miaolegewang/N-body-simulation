@@ -49,14 +49,17 @@ CFLAGS += $(BLOCKING) -O3
 OBJECTS = antennae.cu
 # defining target for make
 default: antennae
-all: clean antennae
+all: clean antennae andromeda
 
 antennae: $(OBJECTS)
 	$(COMPILER) $(CFLAGS) $(LIBRARY) -o antennae $(OBJECTS)
+
+andromeda: andromeda.cu
+	$(COMPILER) $(CFLAGS) $(LIBRARY) -o andromeda andromeda.cu
 
 # Make file test
 test: gputest.cu
 	$(COMPILER) $(CFLAGS) $(LIBRARY) -o test gputest.cu
 
 clean:
-	$(RM) antennae test
+	$(RM) antennae test andromeda
