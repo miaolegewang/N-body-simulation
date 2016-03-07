@@ -46,7 +46,7 @@
 // #define INC_R_RING (0.5 * R)      // increment of radius of rings each step
 #define PMASS 1             // mass of each particle
 #define V_PARAMTER 1            // Parameter adding to initial velocity to make it elliptic
-#define RMIN 1
+#define RMIN 172.5
 #define ECCEN 0.5
 #define RMAX ((1.0 + ECCEN) * RMIN / (1.0 - ECCEN))
 #define RING_BASE_1 (RMIN * 0.2)       // Radius of first ring in 1st galaxy
@@ -136,8 +136,8 @@ int main(int argc, char *argv[])
   int mstep, nout;
   double dt, *x, *y, *z, *vx, *vy, *vz, *mass;
   mstep = argc > 1 ? atoi(argv[1]) : 100;
-  nout = argc > 2 ? atoi(argv[2]) : 20;
-  dt = argc > 3 ? atof(argv[3]) : 2 * PI * RMIN * RMIN /sqrt(G * MASS_1) / 500.0;
+  nout = argc > 2 ? atoi(argv[2]) : 1;
+  dt = argc > 3 ? atof(argv[3]) : 2 * PI * RMIN * RMIN /sqrt(G * MASS_1) / 20000.0;
   int n = (NUM_P_BASE + NUM_P_BASE + (NUM_OF_RING_1 - 1) * INC_NUM_P) * NUM_OF_RING_1 / 2 + (NUM_P_BASE + NUM_P_BASE + (NUM_OF_RING_2 - 1) * INC_NUM_P) * NUM_OF_RING_2 / 2 + 2;
   /*
    *  setup execution configuration
@@ -292,9 +292,9 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    lx[0] = -369.8;
    ly[0] = 615.4;
    lz[0] = -364.8;
-   lvx[0] = 95.0880;
-   lvy[0] = 164.9628;
-   lvz[0] = 81.7040;
+   lvx[0] = 130.3107;
+   lvy[0] = -56.1992;
+   lvz[0] = 27.8348;
 
 
    double cx = lx[0], cy = ly[0], cz = lz[0], cvx = lvx[0], cvy = lvy[0], cvz = lvz[0];
