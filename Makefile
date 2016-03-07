@@ -46,17 +46,20 @@ LIBRARY = -lm
 BLOCKING = $(DIM)
 CFLAGS += $(BLOCKING) -O3
 
-OBJECTS = andromeda.cu
+OBJECTS = antennae.cu
 # defining target for make
-default: andromeda
-all: clean andromeda
+default: antennae
+all: clean antennae andromeda
 
-andromeda: $(OBJECTS)
-	$(COMPILER) $(CFLAGS) $(LIBRARY) -o andromeda $(OBJECTS)
+antennae: $(OBJECTS)
+	$(COMPILER) $(CFLAGS) $(LIBRARY) -o antennae $(OBJECTS)
+
+andromeda: andromeda.cu
+	$(COMPILER) $(CFLAGS) $(LIBRARY) -o andromeda andromeda.cu
 
 # Make file test
 test: gputest.cu
 	$(COMPILER) $(CFLAGS) $(LIBRARY) -o test gputest.cu
 
 clean:
-	$(RM) andromeda test
+	$(RM) antennae test andromeda
