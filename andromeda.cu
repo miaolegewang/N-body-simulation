@@ -84,6 +84,15 @@ __global__ void accel_3_body(int, double*, double*, double*, double*, double*, d
  *                   [mass] [dt]
  *
  */
+ __global__ void accel_3_body_relative(int, double*, double*, double*, double*, double*, double*, double*, double);
+ /*
+  *  accel_3_body_relative - kernel function : update velocity using leapfrog algorithm in 3-body setting Milky Way at the origin
+  *    parameters:
+  *      [#particles] [x position] [y position] [x position]
+  *                   [x velocity] [y velocity] [z velocity]
+  *                   [mass] [dt]
+  *
+  */
 __global__ void printstate(int, double*, double*, double*, double*, double*, double*);
 /*
  *  printstate - kernel function: print position and velocity
@@ -202,11 +211,11 @@ int main(int argc, char *argv[])
      *   in the middle
      *
      */
-    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel_3_body_relative<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
     leapstep<<< grids, threads >>>(n, x, y, z, vx, vy, vz, dt);
     cudaDeviceSynchronize();
-    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel_3_body_relative<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
   }
   if(mstep % nout == 0)
@@ -272,11 +281,11 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    *
    */
   int numofp1 = NUM_P_BASE * NUM_OF_RING_1 + (NUM_OF_RING_1 - 1) * INC_NUM_P * NUM_OF_RING_1 / 2 + 1;
-  lmass[0] = MASS_1;    // Set the mass of center mass of 1st galaxy
+  lmass[0] = MASS_1 * 2;    // Set the mass of center mass of 1st galaxy
   for(int i = 1; i < numofp1; i++){
     lmass[i] = PMASS;
   }
-  lmass[numofp1] = MASS_2;
+  lmass[numofp1] = MASS_2 / 2;
   for(int i = numofp1 + 1; i < n; i++){
     lmass[i] = PMASS;
   }
@@ -288,13 +297,13 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    *
    */
 
-   // Galaxy M31 setup
-   lx[0] = -369.8;
-   ly[0] = 615.4;
-   lz[0] = -364.8;
-   lvx[0] = 130.3107;
-   lvy[0] = -56.1992;
-   lvz[0] = 27.8348;
+   // Milky Way setup
+   lx[0] = 0.0;
+   ly[0] = 0.0;
+   lz[0] = 0.0;
+   lvx[0] = 0.0;
+   lvy[0] = 0.0;
+   lvz[0] = 0.0;
 
 
    double cx = lx[0], cy = ly[0], cz = lz[0], cvx = lvx[0], cvy = lvy[0], cvz = lvz[0];
@@ -339,13 +348,13 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
      radius += INC_R_RING;
    }
 
-   // Milky way setup
-   lx[count] = -8.5;
-   ly[count] = 0.0;
-   lz[count] = 0.0;
-   lvx[count] = 0.0;
-   lvy[count] = 0.0;
-   lvz[count] = 0.0;
+   // M31 way setup
+   lx[numofp1] = -369.8;
+   ly[numofp1] = 615.4;
+   lz[numofp1] = -364.8;
+   lvx[numofp1] = 130.3107;
+   lvy[numofp1] = -56.1992;
+   lvz[numofp1] = 27.8348;
 
    cx = lx[count];
    cy = ly[count];
@@ -474,6 +483,31 @@ __global__ void accel_3_body(int n, double* x, double* y, double* z, double* vx,
   ay += -G * mass[numofp1] * (y[serial] - y[numofp1]) / norm2;
   az += -G * mass[numofp1] * (z[serial] - z[numofp1]) / norm2;
   if(serial < n){
+    vx[serial] += 0.5 * dt * ax;
+    vy[serial] += 0.5 * dt * ay;
+    vz[serial] += 0.5 * dt * az;
+  }
+}
+
+__global__ void accel_3_body_relative(int n, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* mass, double dt){
+  /*
+   *  Three body leapfrog: each particle is in a 3 body system with center mass of galaxy 1 and center mass of galaxy 2
+   *    Because of SOFTPARAMETER, we dont need to determine if thread is computing against itself
+   */
+  const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned int numofp1 = NUM_P_BASE * NUM_OF_RING_1 + (NUM_OF_RING_1 - 1) * NUM_OF_RING_1 * INC_NUM_P / 2 + 1;
+  double ax = 0.0, ay = 0.0, az = 0.0, norm1, norm2;
+  double tempsp = (pow(pow(x[0] - x[numofp1], 2) + pow(y[0] - y[numofp1], 2) + pow(z[0] - z[numofp1], 2), 1.5) <= RMIN) ? 0.2 * RMIN : SOFTPARAMETER;
+  double softparameter = (serial == 0 && serial == numofp1) ? tempsp : SOFTPARAMETER;
+  norm1 = pow(softparameter + pow(x[serial] - x[0], 2) + pow(y[serial] - y[0], 2) + pow(z[serial] - z[0], 2), 1.5);
+  norm2 = pow(softparameter + pow(x[serial] - x[numofp1], 2) + pow(y[serial] - y[numofp1], 2) + pow(z[serial] - z[numofp1], 2), 1.5);
+  ax += -G * mass[0] * (x[serial] - x[0]) / norm1;
+  ay += -G * mass[0] * (y[serial] - y[0]) / norm1;
+  az += -G * mass[0] * (z[serial] - z[0]) / norm1;
+  ax += -G * mass[numofp1] * (x[serial] - x[numofp1]) / norm2;
+  ay += -G * mass[numofp1] * (y[serial] - y[numofp1]) / norm2;
+  az += -G * mass[numofp1] * (z[serial] - z[numofp1]) / norm2;
+  if(serial < n && serial != 0){  // Not updating Mily Way
     vx[serial] += 0.5 * dt * ax;
     vy[serial] += 0.5 * dt * ay;
     vz[serial] += 0.5 * dt * az;
