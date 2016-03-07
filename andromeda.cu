@@ -292,9 +292,9 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    lx[0] = -369.8;
    ly[0] = 615.4;
    lz[0] = -364.8;
-   lvx[0] = 0.0;
-   lvy[0] = -sqrt(G * MASS_1 / (12 * RMIN));
-   lvz[0] = 0.0;
+   lvx[0] = 95.0880;
+   lvy[0] = 164.9628;
+   lvz[0] = 81.7040;
 
 
    double cx = lx[0], cy = ly[0], cz = lz[0], cvx = lvx[0], cvy = lvy[0], cvz = lvz[0];
@@ -344,7 +344,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    ly[count] = 0.0;
    lz[count] = 0.0;
    lvx[count] = 0.0;
-   lvy[count] = sqrt(G * MASS_2 / (12 * RMIN));
+   lvy[count] = 0.0;
    lvz[count] = 0.0;
 
    cx = lx[count];
