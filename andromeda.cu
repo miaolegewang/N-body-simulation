@@ -46,7 +46,7 @@
 // #define INC_R_RING (0.5 * R)      // increment of radius of rings each step
 #define PMASS 1             // mass of each particle
 #define V_PARAMTER 1            // Parameter adding to initial velocity to make it elliptic
-#define RMIN 172.5
+#define RMIN (172.5 / 25)
 #define ECCEN 0.5
 #define RMAX ((1.0 + ECCEN) * RMIN / (1.0 - ECCEN))
 #define RING_BASE_1 (RMIN * 0.2)       // Radius of first ring in 1st galaxy
@@ -139,14 +139,16 @@ int main(int argc, char *argv[])
    *  Handling commandline inputs and setting initial value of the arguments
    *    1. number of steps (mstep)
    *    2. warp (nout)
-   *    3. timestamp (dt)
+   *    3. offset (start printing position)
+   *    4. timestamp (dt)
    *
    */
-  int mstep, nout;
+  int mstep, nout, offset;
   double dt, *x, *y, *z, *vx, *vy, *vz, *mass;
   mstep = argc > 1 ? atoi(argv[1]) : 100;
   nout = argc > 2 ? atoi(argv[2]) : 1;
-  dt = argc > 3 ? atof(argv[3]) : 2 * PI * RMIN * RMIN /sqrt(G * MASS_1) / 20000.0;
+  offset = argc > 3 ? atoi(argv[3]) : 0;
+  dt = argc > 4 ? atof(argv[4]) : 2 * PI * RMIN * RMIN /sqrt(G * MASS_1) / 20000.0;
   int n = (NUM_P_BASE + NUM_P_BASE + (NUM_OF_RING_1 - 1) * INC_NUM_P) * NUM_OF_RING_1 / 2 + (NUM_P_BASE + NUM_P_BASE + (NUM_OF_RING_2 - 1) * INC_NUM_P) * NUM_OF_RING_2 / 2 + 2;
   /*
    *  setup execution configuration
@@ -198,7 +200,16 @@ int main(int argc, char *argv[])
   cudaDeviceSetLimit(cudaLimitPrintfFifoSize, n * BUFFERSIZE);
 
   /*  Start looping steps from first step to mstep  */
-  for(int i = 0; i < mstep; i++){
+  for(int i = 0; i < offset; i++){
+    cudaDeviceSynchronize();
+    accel_3_body_relative<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    cudaDeviceSynchronize();
+    leapstep<<< grids, threads >>>(n, x, y, z, vx, vy, vz, dt);
+    cudaDeviceSynchronize();
+    accel_3_body_relative<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    cudaDeviceSynchronize();
+  }
+  for(int i = offset; i < mstep; i++){
     if(i % nout == 0)
       printstate<<< grids, threads >>>(n, x, y, z, vx, vy, vz);
     cudaDeviceSynchronize();
@@ -281,11 +292,11 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    *
    */
   int numofp1 = NUM_P_BASE * NUM_OF_RING_1 + (NUM_OF_RING_1 - 1) * INC_NUM_P * NUM_OF_RING_1 / 2 + 1;
-  lmass[0] = MASS_1 * 2;    // Set the mass of center mass of 1st galaxy
+  lmass[0] = 2 * MASS_1;    // Set the mass of center mass of 1st galaxy
   for(int i = 1; i < numofp1; i++){
     lmass[i] = PMASS;
   }
-  lmass[numofp1] = MASS_2 / 2;
+  lmass[numofp1] = 2 * MASS_2;
   for(int i = numofp1 + 1; i < n; i++){
     lmass[i] = PMASS;
   }
@@ -311,12 +322,12 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    int count = 1;
 
    // omega = 240, sigma = -i
-   double omega = -2 * PI / 3, sigma = PI / 6, norm;
+   double omega = 0.0, sigma = PI / 2.0, norm;
 
    for(int i = 0; i < NUM_OF_RING_1; i++){
      int numOfP = NUM_P_BASE + INC_NUM_P * i;
      double piece = 2.0 * PI / numOfP;
-     double velocity = sqrt(G * MASS_1 / radius);
+     double velocity = sqrt(G * lmass[0] / radius);
      for(int j = 0; j < numOfP; j++){
        lx[count] = radius * cos(piece * j);
        ly[count] = radius * sin(piece * j);
@@ -349,12 +360,15 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    }
 
    // M31 way setup
-   lx[numofp1] = -369.8;
-   ly[numofp1] = 615.4;
-   lz[numofp1] = -364.8;
-   lvx[numofp1] = 130.3107;
-   lvy[numofp1] = -56.1992;
-   lvz[numofp1] = 27.8348;
+   lx[numofp1] = -369.8 / 25;
+   ly[numofp1] = 615.4 / 25;
+   lz[numofp1] = -364.8 / 25;
+   /*lvx[numofp1] = 2.6679e-16;
+   lvy[numofp1] = -2.7794e-17;
+   lvz[numofp1] = 1.3766e-17;*/
+   lvx[numofp1] = 5.4584e-08;
+   lvy[numofp1] = -9.2973e-08;
+   lvz[numofp1] = 4.6048e-08;
 
    cx = lx[count];
    cy = ly[count];
@@ -365,11 +379,11 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    count++;
    radius = RING_BASE_2;
 
-   omega = 0.0;
-   sigma = - PI / 2.0;
+   omega = -2 * PI / 3;
+   sigma = PI / 6;
    for(int i = 0; i < NUM_OF_RING_2; i++){
     int numOfP = NUM_P_BASE + INC_NUM_P * i;
-    double velocity = sqrt(G * MASS_2 / radius);
+    double velocity = sqrt(G * lmass[numofp1] / radius);
     double piece = 2.0 * PI / numOfP;
     for(int j = 0; j < numOfP; j++){
       lx[count] =  radius * cos(piece * j);
