@@ -314,8 +314,8 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
        lx[count] = radius * cos(piece * j);
        ly[count] = radius * sin(piece * j);
        lz[count] = 0.0;
-       lvx[count] = - velocity * sin(piece * j) * V_PARAMTER;
-       lvy[count] = velocity * cos(piece * j) * V_PARAMTER;
+       lvx[count] = velocity * sin(piece * j) * V_PARAMTER;
+       lvy[count] = - velocity * cos(piece * j) * V_PARAMTER;
        lvz[count] = 0.0;
 
 #ifndef NR
@@ -373,8 +373,8 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
       lx[count] =  radius * cos(piece * j);
       ly[count] =  radius * sin(piece * j);
       lz[count] = 0.0;
-      lvx[count] = - velocity * sin(piece * j) * V_PARAMTER;
-      lvy[count] = velocity * cos(piece * j) * V_PARAMTER;
+      lvx[count] = velocity * sin(piece * j) * V_PARAMTER;
+      lvy[count] = - velocity * cos(piece * j) * V_PARAMTER;
       lvz[count] = 0.0;
 #ifndef NR
       norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
