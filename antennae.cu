@@ -296,7 +296,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    ly[0] = 0.0;
    lz[0] = 0.0;
    lvx[0] = 0.0;
-   lvy[0] = -sqrt(G * MASS_1 / (12 * RMIN));
+   lvy[0] = sqrt(G * MASS_1 / (12 * RMIN));
    lvz[0] = 0.0;
 
 
@@ -304,7 +304,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    double radius = RING_BASE_1;
    int count = 1;
 
-   double omega = -PI / 6.0, sigma = PI / 3.0, norm;
+   double omega = -PI / 6.0, sigma = - PI / 3.0, norm;
 
    for(int i = 0; i < NUM_OF_RING_1; i++){
      int numOfP = NUM_P_BASE + INC_NUM_P * i;
@@ -351,7 +351,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    ly[count] = 0.0;
    lz[count] = 0.0;
    lvx[count] = 0.0;
-   lvy[count] = sqrt(G * MASS_2 / (12 * RMIN));
+   lvy[count] = -sqrt(G * MASS_2 / (12 * RMIN));
    lvz[count] = 0.0;
 
    cx = lx[count];
@@ -364,7 +364,7 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    radius = RING_BASE_2;
 
    omega = - PI / 6.0;
-   sigma = - PI / 3.0;
+   sigma = PI / 3.0;
    for(int i = 0; i < NUM_OF_RING_2; i++){
     int numOfP = NUM_P_BASE + INC_NUM_P * i;
     double velocity = sqrt(G * MASS_2 / radius);
