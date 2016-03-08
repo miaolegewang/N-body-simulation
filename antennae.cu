@@ -478,12 +478,16 @@ __global__ void accel_3_body(int n, double* x, double* y, double* z, double* vx,
 #endif
   norm1 = pow(softparameter + pow(x[serial] - x[0], 2) + pow(y[serial] - y[0], 2) + pow(z[serial] - z[0], 2), 1.5);
   norm2 = pow(softparameter + pow(x[serial] - x[numofp1], 2) + pow(y[serial] - y[numofp1], 2) + pow(z[serial] - z[numofp1], 2), 1.5);
-  ax += -G * mass[0] * (x[serial] - x[0]) / norm1;
-  ay += -G * mass[0] * (y[serial] - y[0]) / norm1;
-  az += -G * mass[0] * (z[serial] - z[0]) / norm1;
-  ax += -G * mass[numofp1] * (x[serial] - x[numofp1]) / norm2;
-  ay += -G * mass[numofp1] * (y[serial] - y[numofp1]) / norm2;
-  az += -G * mass[numofp1] * (z[serial] - z[numofp1]) / norm2;
+  if(serial != 0){
+    ax += -G * mass[0] * (x[serial] - x[0]) / norm1;
+    ay += -G * mass[0] * (y[serial] - y[0]) / norm1;
+    az += -G * mass[0] * (z[serial] - z[0]) / norm1;
+  }
+  if(serial != numofp1){
+    ax += -G * mass[numofp1] * (x[serial] - x[numofp1]) / norm2;
+    ay += -G * mass[numofp1] * (y[serial] - y[numofp1]) / norm2;
+    az += -G * mass[numofp1] * (z[serial] - z[numofp1]) / norm2;
+  }
   if(serial < n){
     vx[serial] += 0.5 * dt * ax;
     vy[serial] += 0.5 * dt * ay;
