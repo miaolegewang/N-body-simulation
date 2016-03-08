@@ -40,6 +40,11 @@ ifdef nr
   CFLAGS += -DNR=1
 endif
 
+# determine whether to use a soft parameter
+ifdef spara
+	CFLAGS += -DSOFTPARA
+endif
+
 # add libraries
 LIBRARY = -lm
 
