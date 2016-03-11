@@ -41,7 +41,7 @@ ifdef nr
 endif
 
 # determine whether to use a soft parameter
-ifdef spara
+ifndef nspara
 	CFLAGS += -DSOFTPARA
 endif
 
