@@ -312,12 +312,12 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    */
 
    // Milky Way setup
-   lx[0] = 7.0560;
-   ly[0] = -12.3080;
-   lz[0] = 6.0960;
-   lvx[0] = -0.1837;
-   lvy[0] = 0.1555;
-   lvz[0] = -0.0770;
+   lx[0] = 9.8165;
+   ly[0] = -16.7203;
+   lz[0] = 8.2814;
+   lvx[0] = -0.1248;
+   lvy[0] = 0.1057;
+   lvz[0] = -0.0523;
 
 
    double cx = lx[0], cy = ly[0], cz = lz[0], cvx = lvx[0], cvy = lvy[0], cvz = lvz[0];
@@ -363,12 +363,12 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    }
 
    // M31 way setup
-   lx[numofp1] = -7.0560;
-   ly[numofp1] = 12.3080;
-   lz[numofp1] = -6.0960;
-   lvx[numofp1] = 0.1837;
-   lvy[numofp1] = -0.1555;
-   lvz[numofp1] = 0.0770;
+   lx[numofp1] = -4.6355;
+   ly[numofp1] = 7.8957;
+   lz[numofp1] = -3.9106;
+   lvx[numofp1] = 0.0589;
+   lvy[numofp1] = -0.0499;
+   lvz[numofp1] = 0.0247;
 
    cx = lx[count];
    cy = ly[count];
