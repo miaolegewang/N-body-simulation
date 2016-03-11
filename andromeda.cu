@@ -149,7 +149,8 @@ int main(int argc, char *argv[])
   mstep = argc > 1 ? atoi(argv[1]) : 100;
   nout = argc > 2 ? atoi(argv[2]) : 1;
   offset = argc > 3 ? atoi(argv[3]) : 0;
-  dt = argc > 4 ? atof(argv[4]) : 2 * PI * RMIN * RMIN /sqrt(G * MASS_1) / 20000.0;
+  dt = argc > 4 ? atof(argv[4]) : 2 * PI * RMIN * RMIN /sqrt(G * MASS_1) / 200.0;
+//   dt = argc > 4 ? atof(argv[4]) : 0.1;
   int n = (NUM_P_BASE + NUM_P_BASE + (NUM_OF_RING_1 - 1) * INC_NUM_P) * NUM_OF_RING_1 / 2 + (NUM_P_BASE + NUM_P_BASE + (NUM_OF_RING_2 - 1) * INC_NUM_P) * NUM_OF_RING_2 / 2 + 2;
   /*
    *  setup execution configuration
@@ -203,11 +204,11 @@ int main(int argc, char *argv[])
   /*  Start looping steps from first step to mstep  */
   for(int i = 0; i < offset; i++){
     cudaDeviceSynchronize();
-    accel_3_body_relative<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
     leapstep<<< grids, threads >>>(n, x, y, z, vx, vy, vz, dt);
     cudaDeviceSynchronize();
-    accel_3_body_relative<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
   }
   for(int i = offset; i < mstep; i++){
@@ -223,11 +224,11 @@ int main(int argc, char *argv[])
      *   in the middle
      *
      */
-    accel_3_body_relative<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
     leapstep<<< grids, threads >>>(n, x, y, z, vx, vy, vz, dt);
     cudaDeviceSynchronize();
-    accel_3_body_relative<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
   }
   if(mstep % nout == 0)
@@ -293,11 +294,11 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    *
    */
   int numofp1 = NUM_P_BASE * NUM_OF_RING_1 + (NUM_OF_RING_1 - 1) * INC_NUM_P * NUM_OF_RING_1 / 2 + 1;
-  lmass[0] = 2 * MASS_1;    // Set the mass of center mass of 1st galaxy
+  lmass[0] =   MASS_1;    // Set the mass of center mass of 1st galaxy
   for(int i = 1; i < numofp1; i++){
     lmass[i] = PMASS;
   }
-  lmass[numofp1] = 2 * MASS_2;
+  lmass[numofp1] =  MASS_2;
   for(int i = numofp1 + 1; i < n; i++){
     lmass[i] = PMASS;
   }
