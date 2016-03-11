@@ -5,11 +5,12 @@
  */
 
 /*
- *  TODO:
+ *  TODO:(*for final project)
  *    1. andromeda
  *    2. report
  *    3. presentation
- *
+ *	  *4. N-body galaxy code-generat 10^11 particles
+ *	  *5. MatLab write a function to track the distance between Milkway and Andromeda
  */
 
 
