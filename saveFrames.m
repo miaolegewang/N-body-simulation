@@ -18,21 +18,20 @@ function saveFrames(Filename)
       A = sortrows(A,1);  % sort the order of A by the index of particles
       x1 = A(1:num_particles, 2);
       y1 = A(1:num_particles, 3);
-      z1 = A(1:num_particles, 4);
+      z1 = -A(1:num_particles, 4);
       x2 = A((num_particles+1):num_points, 2);
       y2 = A((num_particles+1):num_points, 3);
-      z2 = A((num_particles+1):num_points, 4);
+      z2 = -A((num_particles+1):num_points, 4);
       figure('Color','black');
-      plot3(x1,y1,z1,'.','Color',[0.824 0.824 0.824],'Markersize',0.7);
+      plot3(x1,y1,z1,'.','Color','blue','Markersize',0.7);
       hold on;
-      plot3(x2,y2,z2,'.','Color',[1 0.84 0],'Markersize',0.7);
-      %'.','Color','red','Markersize',0.7);
+      plot3(x2,y2,z2,'.','Color','red','Markersize',0.7);
       axis equal;
       axis([-3,3,-3,3,-3,3]);
       %axis equal;
       axis off;
       set(gcf,'inverthardcopy','off');
-      view([0,1,0]); %rotate the viewpoint
+      view(120,0); %rotate the viewpoint
       saveas(gcf,strcat('myimage/time_',int2str(i)),'png');
       hold off;
   end
