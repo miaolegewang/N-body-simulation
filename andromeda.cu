@@ -95,20 +95,20 @@ __global__ void accel_3_body(int, double*, double*, double*, double*, double*, d
   *                   [mass] [dt]
   *
   */
-__global__ void printstate(int, double*, double*, double*, double*, double*, double*);
+__global__ void printstate(int, double*, double*, double*, double*, double*, double*, int);
 /*
  *  printstate - kernel function: print position and velocity
  *    parameters:
  *      [#particles] [x position] [y position] [x position]
- *                   [x velocity] [y velocity] [z velocity]
+ *                   [x velocity] [y velocity] [z velocity] [tnow]
  *
  */
-void printstate_host(int, double*, double*, double*, double*, double*, double*);
+void printstate_host(int, double*, double*, double*, double*, double*, double*, int);
 /*
  *  printstate_host - host function: print position and velocity
  *    parameters:
  *      [#particles] [x position] [y position] [x position]
- *                   [x velocity] [y velocity] [z velocity]
+ *                   [x velocity] [y velocity] [z velocity] [tnow]
  *
  */
 __global__ void initialConditions(int, double*, double*, double*, double*, double*, double*, double*);
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
    *    4. timestamp (dt)
    *
    */
-  int mstep, nout, offset;
+  int mstep, nout, offset, tnow = 0;
   double dt, *x, *y, *z, *vx, *vy, *vz, *mass;
   mstep = argc > 1 ? atoi(argv[1]) : 100;
   nout = argc > 2 ? atoi(argv[2]) : 1;
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
   cudaDeviceSetLimit(cudaLimitPrintfFifoSize, n * BUFFERSIZE);
 
   /*  Start looping steps from first step to mstep  */
-  for(int i = 0; i < offset; i++){
+  for(int i = 0; i < offset; i++, tnow++){
     cudaDeviceSynchronize();
     accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
@@ -212,9 +212,9 @@ int main(int argc, char *argv[])
     accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
   }
-  for(int i = offset; i < mstep; i++){
+  for(int i = offset; i < mstep; i++, tnow++){
     if(i % nout == 0)
-      printstate<<< grids, threads >>>(n, x, y, z, vx, vy, vz);
+      printstate<<< grids, threads >>>(n, x, y, z, vx, vy, vz, tnow);
     cudaDeviceSynchronize();
 
     /*
@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
     cudaDeviceSynchronize();
   }
   if(mstep % nout == 0)
-    printstate<<< grids, threads >>>(n, x, y, z, vx, vy, vz);
+    printstate<<< grids, threads >>>(n, x, y, z, vx, vy, vz, tnow);
   cudaDeviceSynchronize();
 
   // After finishing, free the allocated memory
@@ -536,14 +536,14 @@ __global__ void accel_3_body_relative(int n, double* x, double* y, double* z, do
   }
 }
 
-__global__ void printstate(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz){
+__global__ void printstate(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, int tnow){
   const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
   if(serial < n){
-    printf("%d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f\n", serial, x[serial], y[serial], z[serial], vx[serial], vy[serial], vz[serial]);
+    printf("%d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %d\n", serial, x[serial], y[serial], z[serial], vx[serial], vy[serial], vz[serial], tnow);
   }
 }
 
-void printstate_host(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz){
+void printstate_host(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, int tnow){
   double *lx = (double *)malloc(n * sizeof(double));
   double *ly = (double *)malloc(n * sizeof(double));
   double *lz = (double *)malloc(n * sizeof(double));
@@ -557,7 +557,7 @@ void printstate_host(int n, double *x, double *y, double *z, double *vx, double 
   cudaMemcpy(lvy, vy, (size_t)n * sizeof(double), cudaMemcpyDeviceToHost);
   cudaMemcpy(lvz, vz, (size_t)n * sizeof(double), cudaMemcpyDeviceToHost);
   for(int i = 0; i < n; i++){
-    printf("%d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f\n", i, lx[i], ly[i], lz[i], lvx[i], lvy[i], lvz[i]);
+    printf("%d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %d\n", i, lx[i], ly[i], lz[i], lvx[i], lvy[i], lvz[i], tnow);
   }
   free(lx);
   free(ly);
