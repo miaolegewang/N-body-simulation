@@ -11,6 +11,8 @@
  *    3. presentation
  *	  *4. N-body galaxy code-generat 10^11 particles
  *	  *5. MatLab write a function to track the distance between Milkway and Andromeda
+ *	  *6. change accel function to the N-body one.
+ *	  *7. print mass[i]. because the halo is dark matter. Or better way distinguish dark matter and rings?
  */
 
 
