@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <curand.h>
 #include <curand_kernel.h>
+#include "otherfunctions.c"
 
 /*
 **  Modify the constant parameters if neccessary
@@ -79,24 +80,7 @@ __global__ void accel(int, double*, double*, double*, double*, double*, double*,
  *                   [mass] [dt]
  *
  */
-__global__ void accel_3_body(int, double*, double*, double*, double*, double*, double*, double*, double);
-/*
- *  accel_3_body - kernel function : update velocity using leapfrog algorithm in 3-body
- *    parameters:
- *      [#particles] [x position] [y position] [x position]
- *                   [x velocity] [y velocity] [z velocity]
- *                   [mass] [dt]
- *
- */
- __global__ void accel_3_body_relative(int, double*, double*, double*, double*, double*, double*, double*, double);
- /*
-  *  accel_3_body_relative - kernel function : update velocity using leapfrog algorithm in 3-body setting Milky Way at the origin
-  *    parameters:
-  *      [#particles] [x position] [y position] [x position]
-  *                   [x velocity] [y velocity] [z velocity]
-  *                   [mass] [dt]
-  *
-  */
+
 __global__ void printstate(int, double*, double*, double*, double*, double*, double*, int);
 /*
  *  printstate - kernel function: print position and velocity
@@ -105,28 +89,24 @@ __global__ void printstate(int, double*, double*, double*, double*, double*, dou
  *                   [x velocity] [y velocity] [z velocity] [tnow]
  *
  */
-void printstate_host(int, double*, double*, double*, double*, double*, double*, int);
+
+void initialCondition_host_file(char *, char *, double **, double **, double **, double **, double **, double **, double **, int *);
 /*
- *  printstate_host - host function: print position and velocity
+ *  initialCondition_host_file - host function: create both galaxies by extracting data from files
  *    parameters:
- *      [#particles] [x position] [y position] [x position]
- *                   [x velocity] [y velocity] [z velocity] [tnow]
+ *      [filename galaxy 1] [filename galaxy 2]
+ *                 [x position array addr] [y position array addr] [z position array addr]
+ *                 [x velocity array addr] [y velocity array addr] [z velocity array addr]
+ *                 [mass array addr] [size addr]
  *
  */
-__global__ void initialConditions(int, double*, double*, double*, double*, double*, double*, double*);
+void create_galaxy_file(FILE *, double*, double*, double*, double*, double*, double*, double*);
 /*
- *  initialConditions - kernel function: setup initial conditions
+ *  create_galaxy_file - host function: create galaxy by reading data from file
  *    parameters:
- *      [#particles] [x position] [y position] [x position]
- *                   [x velocity] [y velocity] [z velocity] [mass]
- *
- */
-void initialCondition_host(int, double*, double*, double*, double*, double*, double*, double*);
-/*
- *  initialCondition_host - host function: setup initial conditions
- *    parameters:
- *      [#particles] [x position] [y position] [x position]
- *                   [x velocity] [y velocity] [z velocity] [mass]
+ *      [filename galaxy] [x position] [y position] [z position]
+ *                        [x velocity] [y velocity] [z velocity]
+ *                        [mass]
  *
  */
 
@@ -135,6 +115,8 @@ void initialCondition_host(int, double*, double*, double*, double*, double*, dou
  *
  */
 void rotate(double*, double*, double*, double, double, double, double);
+void read_size_from_file(FILE*, int*, double*);
+
 
 /**     Main function     **/
 int main(int argc, char *argv[])
@@ -147,55 +129,15 @@ int main(int argc, char *argv[])
    *    4. timestamp (dt)
    *
    */
-  int mstep, nout, offset, tnow = 0;
+  int mstep, nout, offset, tnow = 0, n;
   double dt, *x, *y, *z, *vx, *vy, *vz, *mass;
   mstep = argc > 1 ? atoi(argv[1]) : 100;
   nout = argc > 2 ? atoi(argv[2]) : 1;
   offset = argc > 3 ? atoi(argv[3]) : 0;
   dt = argc > 4 ? atof(argv[4]) : 2 * PI * RMIN * RMIN /sqrt(G * MASS_1) / 200.0;
 //   dt = argc > 4 ? atof(argv[4]) : 0.1;
-  int n = (NUM_P_BASE + NUM_P_BASE + (NUM_OF_RING_1 - 1) * INC_NUM_P) * NUM_OF_RING_1 / 2 + (NUM_P_BASE + NUM_P_BASE + (NUM_OF_RING_2 - 1) * INC_NUM_P) * NUM_OF_RING_2 / 2 + 2;
-  /*
-   *  setup execution configuration
-   */
-  int numOfBlocks = n / BLOCKSIZE + (n % BLOCKSIZE != 0);
-  int threads = BLOCKSIZE, grids = numOfBlocks;
-
-  /*
-  ** Allocate device memory for kernel functions
-  **  May not need to allocate memory for host function
-  **  because we print using kernel function
-  ** Use numOfBlocks instead of n to simplify the kernel function
-  */
-  const unsigned int extra = numOfBlocks * BLOCKSIZE - n;
-  cudaMalloc((void**) &x, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMalloc((void**) &y, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMalloc((void**) &z, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMalloc((void**) &vx, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMalloc((void**) &vy, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMalloc((void**) &vz, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMalloc((void**) &mass, (size_t)(numOfBlocks * BLOCKSIZE * sizeof(double)));
-  cudaMemset((void**) x + n, 0, (size_t)(extra * sizeof(double)));
-  cudaMemset((void**) y + n, 0, (size_t)(extra * sizeof(double)));
-  cudaMemset((void**) z + n, 0, (size_t)(extra * sizeof(double)));
-  cudaMemset((void**) vx + n, 0, (size_t)(extra * sizeof(double)));
-  cudaMemset((void**) vy + n, 0, (size_t)(extra * sizeof(double)));
-  cudaMemset((void**) vz + n, 0, (size_t)(extra * sizeof(double)));
-  cudaMemset((void**) mass + n, 0, (size_t)(extra * sizeof(double)));
-
-  /*
-   *  If MCORE is defined, use kernel function to setup
-   *    initial conditions
-   *  Otherwise, use host function to setup initial conditions
-   *
-   */
-#ifdef MCORE
-  initialConditions<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass);
-  cudaDeviceSynchronize();
-#else
-  initialCondition_host(n, x, y, z, vx, vy, vz, mass);
-#endif
-
+  initialCondition_host_file("milky_way.dat", "andromeda.dat", &x, &y, &z, &vx, &vy, &vz, &mass, &n);
+  int grids = ceil((double)n / BLOCKSIZE), threads = BLOCKSIZE;
   /*
    *  Use cudaDeviceSetLimit() to change the buffer size of printf
    *   used in kernel functions to solve the problem encountered before:
@@ -207,11 +149,11 @@ int main(int argc, char *argv[])
   /*  Start looping steps from first step to mstep  */
   for(int i = 0; i < offset; i++, tnow++){
     cudaDeviceSynchronize();
-    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
     leapstep<<< grids, threads >>>(n, x, y, z, vx, vy, vz, dt);
     cudaDeviceSynchronize();
-    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
   }
   for(int i = offset; i < mstep; i++, tnow++){
@@ -227,11 +169,11 @@ int main(int argc, char *argv[])
      *   in the middle
      *
      */
-    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
     leapstep<<< grids, threads >>>(n, x, y, z, vx, vy, vz, dt);
     cudaDeviceSynchronize();
-    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
   }
   if(mstep % nout == 0)
@@ -281,158 +223,12 @@ void rotate(double* x, double* y, double *z, double n1, double n2, double n3, do
 
 }
 
-void initialCondition_host(int n, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* mass){
-  srand(time(0));
-  double *lx = (double*)malloc(n * sizeof(double));
-  double *ly = (double*)malloc(n * sizeof(double));
-  double *lz = (double*)malloc(n * sizeof(double));
-  double *lvx = (double*)malloc(n * sizeof(double));
-  double *lvy = (double*)malloc(n * sizeof(double));
-  double *lvz = (double*)malloc(n * sizeof(double));
-  double *lmass = (double*)malloc(n * sizeof(double));
-
-
-  /*
-   *  Setup mass of each particles (including center mass)
-   *
-   */
-  int numofp1 = NUM_P_BASE * NUM_OF_RING_1 + (NUM_OF_RING_1 - 1) * INC_NUM_P * NUM_OF_RING_1 / 2 + 1;
-  lmass[0] =   MASS_1;    // Set the mass of center mass of 1st galaxy
-  for(int i = 1; i < numofp1; i++){
-    lmass[i] = PMASS;
+void create_galaxy_file(FILE *fp, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* mass){
+  int i = 0;
+  while(!feof(fp)){
+    fscanf(fp, "%lf %lf %lf %lf %lf %lf %lf", mass + i, x + i, y + i, z + i, vx + i, vy + i, vz + i);
+    i++;
   }
-  lmass[numofp1] =  MASS_2;
-  for(int i = numofp1 + 1; i < n; i++){
-    lmass[i] = PMASS;
-  }
-
-  /*
-   *  Setup position of each particles
-   *    First galaxy is M31
-   *    Secon galaxy is Milky way
-   *
-   */
-
-   // Milky Way setup
-   lx[0] = 9.8165;
-   ly[0] = -16.7203;
-   lz[0] = 8.2814;
-   lvx[0] = -0.1248;
-   lvy[0] = 0.1057;
-   lvz[0] = -0.0523;
-
-
-   double cx = lx[0], cy = ly[0], cz = lz[0], cvx = lvx[0], cvy = lvy[0], cvz = lvz[0];
-   double radius = RING_BASE_1;
-   int count = 1;
-
-   // omega = 240, sigma = -i
-   double omega = 0.0, sigma = PI / 2.0, norm;
-
-   for(int i = 0; i < NUM_OF_RING_1; i++){
-     int numOfP = NUM_P_BASE + INC_NUM_P * i;
-     double piece = 2.0 * PI / numOfP;
-     double velocity = sqrt(G * lmass[0] / radius);
-     for(int j = 0; j < numOfP; j++){
-       lx[count] = radius * cos(piece * j);
-       ly[count] = radius * sin(piece * j);
-       lz[count] = 0.0;
-       lvx[count] = - velocity * sin(piece * j) * V_PARAMTER;
-       lvy[count] = velocity * cos(piece * j) * V_PARAMTER;
-       lvz[count] = 0.0;
-
-#ifndef NR
-       norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
-       rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
-#endif
-       lx[count] += cx;
-       ly[count] += cy;
-       lz[count] += cz;
-
-       /*
-        *    TODO: set up initial condition for velocity
-        */
-#ifndef NR
-       norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
-       rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
-#endif
-       lvx[count] += cvx;
-       lvy[count] += cvy;
-       lvz[count] += cvz;
-       count++;
-     }
-     radius += INC_R_RING;
-   }
-
-   // M31 way setup
-   lx[numofp1] = -4.6355;
-   ly[numofp1] = 7.8957;
-   lz[numofp1] = -3.9106;
-   lvx[numofp1] = 0.0589;
-   lvy[numofp1] = -0.0499;
-   lvz[numofp1] = 0.0247;
-
-   cx = lx[count];
-   cy = ly[count];
-   cz = lz[count];
-   cvx = lvx[count];
-   cvy = lvy[count];
-   cvz = lvz[count];
-   count++;
-   radius = RING_BASE_2;
-
-   omega = -2 * PI / 3;
-   sigma = PI / 6;
-   for(int i = 0; i < NUM_OF_RING_2; i++){
-    int numOfP = NUM_P_BASE + INC_NUM_P * i;
-    double velocity = sqrt(G * lmass[numofp1] / radius);
-    double piece = 2.0 * PI / numOfP;
-    for(int j = 0; j < numOfP; j++){
-      lx[count] =  radius * cos(piece * j);
-      ly[count] =  radius * sin(piece * j);
-      lz[count] = 0.0;
-      lvx[count] = - velocity * sin(piece * j) * V_PARAMTER;
-      lvy[count] = velocity * cos(piece * j) * V_PARAMTER;
-      lvz[count] = 0.0;
-#ifndef NR
-      norm = sqrt(lx[count] * lx[count] + ly[count] * ly[count] + lz[count] * lz[count]);
-      rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
-#endif
-      lx[count] += cx;
-      ly[count] += cy;
-      lz[count] += cz;
-
-      /*
-       *  TODO: setup initial conditions for velocity
-       */
-#ifndef NR
-      norm = sqrt(lvx[count] * lvx[count] + lvy[count] * lvy[count] + lvz[count] * lvz[count]);
-      rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
-#endif
-      lvx[count] += cvx;
-      lvy[count] += cvy;
-      lvz[count] += cvz;
-
-      count++;
-    }
-    radius += INC_R_RING;
-  }
-
-
-  cudaMemcpy(x, lx, (size_t) n * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(y, ly, (size_t) n * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(z, lz, (size_t) n * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(vx, lvx, (size_t) n * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(vy, lvy, (size_t) n * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(vz, lvz, (size_t) n * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(mass, lmass, (size_t) n * sizeof(double), cudaMemcpyHostToDevice);
-  free(lx);
-  free(ly);
-  free(lz);
-  free(lvx);
-  free(lvy);
-  free(lvz);
-  free(lmass);
 }
 
 __global__ void leapstep(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double dt){
@@ -451,87 +247,26 @@ __global__ void accel(int n, double *x, double *y, double *z, double *vx, double
   __shared__ double lx[BLOCKSIZE];
   __shared__ double ly[BLOCKSIZE];
   __shared__ double lz[BLOCKSIZE];
+  __shared__ double lm[BLOCKSIZE];
 
-  if(serial < n){
-    double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = x[serial], thisY = y[serial], thisZ = z[serial];
-    for(int i = 0; i < gridDim.x; i++){
-      // Copy data from main memory
-      lx[tdx] = x[i * BLOCKSIZE + tdx];
-      lz[tdx] = y[i * BLOCKSIZE + tdx];
-      ly[tdx] = z[i * BLOCKSIZE + tdx];
-      __syncthreads();
-
-      // Accumulates the acceleration
-      int itrSize = min(BLOCKSIZE, n - i * BLOCKSIZE);
-      for(int j = 0; j < itrSize; j++){
-        norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-        if(i * BLOCKSIZE + j != serial){
-          ax += - G * mass[i * BLOCKSIZE + j] * (thisX - lx[j]) / norm;
-          ay += - G * mass[i * BLOCKSIZE + j] * (thisY - ly[j]) / norm;
-          az += - G * mass[i * BLOCKSIZE + j] * (thisZ - lz[j]) / norm;
-        }
+  double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = x[serial], thisY = y[serial], thisZ = z[serial];
+  for(int i = 0; i < gridDim.x; i++){
+    // Copy data from main memory
+    lx[tdx] = x[i * blockDim.x + tdx];
+    lz[tdx] = y[i * blockDim.x + tdx];
+    ly[tdx] = z[i * blockDim.x + tdx];
+    __syncthreads();
+    // Accumulates the acceleration
+    for(int j = 0; j < blockDim.x; j++){
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      if(i * BLOCKSIZE + j != serial){
+        ax += - G * lm[i * blockDim.x + j] * (thisX - lx[j]) / norm;
+        ay += - G * lm[i * blockDim.x + j] * (thisY - ly[j]) / norm;
+        az += - G * lm[i * blockDim.x + j] * (thisZ - lz[j]) / norm;
       }
     }
-
-    // Updates velocities in each directions
-    vx[serial] += 0.5 * dt * ax;
-    vy[serial] += 0.5 * dt * ay;
-    vz[serial] += 0.5 * dt * az;
-  }
-}
-
-__global__ void accel_3_body(int n, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* mass, double dt){
-  /*
-   *  Three body leapfrog: each particle is in a 3 body system with center mass of galaxy 1 and center mass of galaxy 2
-   *    Because of SOFTPARAMETER, we dont need to determine if thread is computing against itself
-   */
-  const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
-  const unsigned int numofp1 = NUM_P_BASE * NUM_OF_RING_1 + (NUM_OF_RING_1 - 1) * NUM_OF_RING_1 * INC_NUM_P / 2 + 1;
-  double ax = 0.0, ay = 0.0, az = 0.0, norm1, norm2;
-#ifdef SOFTPARA
-  double tempsp = (pow(pow(x[0] - x[numofp1], 2) + pow(y[0] - y[numofp1], 2) + pow(z[0] - z[numofp1], 2), 1.5) <= RMIN) ? 0.2 * RMIN : SOFTPARAMETER;
-  double softparameter = (serial == 0 && serial == numofp1) ? tempsp : SOFTPARAMETER;
-#else
-  double softparameter = 0.0;
-#endif
-  norm1 = pow(softparameter + pow(x[serial] - x[0], 2) + pow(y[serial] - y[0], 2) + pow(z[serial] - z[0], 2), 1.5);
-  norm2 = pow(softparameter + pow(x[serial] - x[numofp1], 2) + pow(y[serial] - y[numofp1], 2) + pow(z[serial] - z[numofp1], 2), 1.5);
-  if(serial != 0){
-    ax += -G * mass[0] * (x[serial] - x[0]) / norm1;
-    ay += -G * mass[0] * (y[serial] - y[0]) / norm1;
-    az += -G * mass[0] * (z[serial] - z[0]) / norm1;
-  }
-  if(serial != numofp1){
-    ax += -G * mass[numofp1] * (x[serial] - x[numofp1]) / norm2;
-    ay += -G * mass[numofp1] * (y[serial] - y[numofp1]) / norm2;
-    az += -G * mass[numofp1] * (z[serial] - z[numofp1]) / norm2;
   }
   if(serial < n){
-    vx[serial] += 0.5 * dt * ax;
-    vy[serial] += 0.5 * dt * ay;
-    vz[serial] += 0.5 * dt * az;
-  }
-}
-
-__global__ void accel_3_body_relative(int n, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* mass, double dt){
-  /*
-   *  Three body leapfrog: each particle is in a 3 body system with center mass of galaxy 1 and center mass of galaxy 2
-   *    Because of SOFTPARAMETER, we dont need to determine if thread is computing against itself
-   */
-  const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
-  const unsigned int numofp1 = NUM_P_BASE * NUM_OF_RING_1 + (NUM_OF_RING_1 - 1) * NUM_OF_RING_1 * INC_NUM_P / 2 + 1;
-  double ax = 0.0, ay = 0.0, az = 0.0, norm1, norm2;
-  double tempsp = (pow(pow(x[0] - x[numofp1], 2) + pow(y[0] - y[numofp1], 2) + pow(z[0] - z[numofp1], 2), 1.5) <= RMIN) ? 0.2 * RMIN : SOFTPARAMETER;
-  double softparameter = (serial == 0 && serial == numofp1) ? tempsp : SOFTPARAMETER;
-  norm1 = pow(softparameter + pow(x[serial] - x[0], 2) + pow(y[serial] - y[0], 2) + pow(z[serial] - z[0], 2), 1.5);
-  norm2 = pow(softparameter + pow(x[serial] - x[numofp1], 2) + pow(y[serial] - y[numofp1], 2) + pow(z[serial] - z[numofp1], 2), 1.5);
-  ax += -G * mass[0] * (x[serial] - x[0]) / norm1;
-  ay += -G * mass[0] * (y[serial] - y[0]) / norm1;
-  az += -G * mass[0] * (z[serial] - z[0]) / norm1;
-  ax += -G * mass[numofp1] * (x[serial] - x[numofp1]) / norm2;
-  ay += -G * mass[numofp1] * (y[serial] - y[numofp1]) / norm2;
-  az += -G * mass[numofp1] * (z[serial] - z[numofp1]) / norm2;
-  if(serial < n && serial != 0){  // Not updating Mily Way
     vx[serial] += 0.5 * dt * ax;
     vy[serial] += 0.5 * dt * ay;
     vz[serial] += 0.5 * dt * az;
@@ -545,26 +280,45 @@ __global__ void printstate(int n, double *x, double *y, double *z, double *vx, d
   }
 }
 
-void printstate_host(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, int tnow){
-  double *lx = (double *)malloc(n * sizeof(double));
-  double *ly = (double *)malloc(n * sizeof(double));
-  double *lz = (double *)malloc(n * sizeof(double));
-  double *lvx = (double *)malloc(n * sizeof(double));
-  double *lvy = (double *)malloc(n * sizeof(double));
-  double *lvz = (double *)malloc(n * sizeof(double));
-  cudaMemcpy(lx, x, (size_t)n * sizeof(double), cudaMemcpyDeviceToHost);
-  cudaMemcpy(ly, y, (size_t)n * sizeof(double), cudaMemcpyDeviceToHost);
-  cudaMemcpy(lz, z, (size_t)n * sizeof(double), cudaMemcpyDeviceToHost);
-  cudaMemcpy(lvx, vx, (size_t)n * sizeof(double), cudaMemcpyDeviceToHost);
-  cudaMemcpy(lvy, vy, (size_t)n * sizeof(double), cudaMemcpyDeviceToHost);
-  cudaMemcpy(lvz, vz, (size_t)n * sizeof(double), cudaMemcpyDeviceToHost);
-  for(int i = 0; i < n; i++){
-    printf("%d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %d\n", i, lx[i], ly[i], lz[i], lvx[i], lvy[i], lvz[i], tnow);
-  }
+void initialCondition_host_file(char *input1, char *input2, double **x, double **y, double **z, double **vx, double **vy, double **vz, double **mass, int *size){
+  FILE *fp1 = fopen(input1, "r");
+  FILE *fp2 = fopen(input2, "r");
+  double unknown;
+  int s1 = 0, s2 = 0;
+  read_size_from_file(fp1, &s1, &unknown);
+  read_size_from_file(fp2, &s2, &unknown);
+  (*size) = s1 + s2;
+  // Initial local data array
+  double *lx, *ly, *lz, *lvx, *lvy, *lvz, *lm;
+  lx = (double*)malloc((*size) * 7 * sizeof(double));
+  ly = lx + (*size);
+  lz = ly + (*size);
+  lvx = lz + (*size);
+  lvy = lvx + (*size);
+  lvz = lvy + (*size);
+  lm = lvz + (*size);
+  create_galaxy_file(fp1, lx, ly, lz, lvx, lvy, lvz, lm);
+  create_galaxy_file(fp2, lx + s1, ly + s1, lz + s1, lvx + s1, lvy + s1, lvz + s1, lm + s1);
+
+  // Allocate device memory
+  int numOfBlocks = ceil((double)(*size) / BLOCKSIZE);
+  cudaMalloc((void**)x, numOfBlocks * BLOCKSIZE * 7 * sizeof(double));
+  *y = *x + numOfBlocks * BLOCKSIZE;
+  *z = *y + numOfBlocks * BLOCKSIZE;
+  *vx = *z + numOfBlocks * BLOCKSIZE;
+  *vy = *vx + numOfBlocks * BLOCKSIZE;
+  *vz = *vy + numOfBlocks * BLOCKSIZE;
+  *mass = *vz + numOfBlocks * BLOCKSIZE;
+  cudaMemcpy((void*)(*x), (void*)lx, numOfBlocks * 7 * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
   free(lx);
-  free(ly);
-  free(lz);
-  free(lvx);
-  free(lvy);
-  free(lvz);
+  fclose(fp1);
+  fclose(fp2);
+}
+
+void read_size_from_file(FILE *fp, int *size, double *unknown){
+  if(feof(fp)){
+    printf("Error: file read error\n");
+    exit(0);
+  }
+  fscanf(fp, "%lu %lf", size, unknown);
 }
