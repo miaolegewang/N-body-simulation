@@ -129,12 +129,34 @@ void initialCondition_host(int, double*, double*, double*, double*, double*, dou
  *                   [x velocity] [y velocity] [z velocity] [mass]
  *
  */
+void initialCondition_host_file(char *, char *, double **, double **, double **, double **, double **, double **, double **, int *);
+/*
+ *  initialCondition_host_file - host function: create both galaxies by extracting data from files
+ *    parameters:
+ *      [filename galaxy 1] [filename galaxy 2]
+ *                 [x position array addr] [y position array addr] [z position array addr]
+ *                 [x velocity array addr] [y velocity array addr] [z velocity array addr]
+ *                 [mass array addr] [size addr]
+ *
+ */
+void create_galaxy_file(FILE *, double*, double*, double*, double*, double*, double*, double*);
+/*
+ *  create_galaxy_file - host function: create galaxy by reading data from file
+ *    parameters:
+ *      [filename galaxy] [x position] [y position] [z position]
+ *                        [x velocity] [y velocity] [z velocity]
+ *                        [mass]
+ *
+ */
 
 /*
  *  Helper Function Declarations
  *
  */
 void rotate(double*, double*, double*, double, double, double, double);
+void read_size_from_file(FILE*, int*, double*);
+void read_data_from_file(FILE*, double*, double*, double*, double*, double*, double*, double*);
+
 
 /**     Main function     **/
 int main(int argc, char *argv[])
@@ -435,6 +457,14 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
   free(lmass);
 }
 
+void create_galaxy_file(FILE *fp, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* mass){
+  int i = 0;
+  while(!feof(fp)){
+    fscanf(fp, "%lf %lf %lf %lf %lf %lf %lf", mass + i, x + i, y + i, z + i, vx + i, vy + i, vz + i);
+    i++;
+  }
+}
+
 __global__ void leapstep(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double dt){
   const unsigned int serial = blockIdx.x * BLOCKSIZE + threadIdx.x;
   if(serial < n){
@@ -451,29 +481,26 @@ __global__ void accel(int n, double *x, double *y, double *z, double *vx, double
   __shared__ double lx[BLOCKSIZE];
   __shared__ double ly[BLOCKSIZE];
   __shared__ double lz[BLOCKSIZE];
+  __shared__ double lm[BLOCKSIZE];
 
-  if(serial < n){
-    double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = x[serial], thisY = y[serial], thisZ = z[serial];
-    for(int i = 0; i < gridDim.x; i++){
-      // Copy data from main memory
-      lx[tdx] = x[i * BLOCKSIZE + tdx];
-      lz[tdx] = y[i * BLOCKSIZE + tdx];
-      ly[tdx] = z[i * BLOCKSIZE + tdx];
-      __syncthreads();
-
-      // Accumulates the acceleration
-      int itrSize = min(BLOCKSIZE, n - i * BLOCKSIZE);
-      for(int j = 0; j < itrSize; j++){
-        norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-        if(i * BLOCKSIZE + j != serial){
-          ax += - G * mass[i * BLOCKSIZE + j] * (thisX - lx[j]) / norm;
-          ay += - G * mass[i * BLOCKSIZE + j] * (thisY - ly[j]) / norm;
-          az += - G * mass[i * BLOCKSIZE + j] * (thisZ - lz[j]) / norm;
-        }
+  double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = x[serial], thisY = y[serial], thisZ = z[serial];
+  for(int i = 0; i < gridDim.x; i++){
+    // Copy data from main memory
+    lx[tdx] = x[i * blockDim.x + tdx];
+    lz[tdx] = y[i * blockDim.x + tdx];
+    ly[tdx] = z[i * blockDim.x + tdx];
+    __syncthreads();
+    // Accumulates the acceleration
+    for(int j = 0; j < blockDim.x; j++){
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      if(i * BLOCKSIZE + j != serial){
+        ax += - G * lm[i * blockDim.x + j] * (thisX - lx[j]) / norm;
+        ay += - G * lm[i * blockDim.x + j] * (thisY - ly[j]) / norm;
+        az += - G * lm[i * blockDim.x + j] * (thisZ - lz[j]) / norm;
       }
     }
-
-    // Updates velocities in each directions
+  }
+  if(serial < n){
     vx[serial] += 0.5 * dt * ax;
     vy[serial] += 0.5 * dt * ay;
     vz[serial] += 0.5 * dt * az;
@@ -567,4 +594,48 @@ void printstate_host(int n, double *x, double *y, double *z, double *vx, double 
   free(lvx);
   free(lvy);
   free(lvz);
+}
+
+void initialCondition_host_file(char *input1, char *input2, double **x, double **y, double **z, double **vx, double **vy, double **vz, double **mass, int *size){
+  FILE *fp1 = fopen(input1, "r");
+  FILE *fp2 = fopen(input2, "r");
+  double unknown;
+  int s1 = 0, s2 = 0;
+  read_size_from_file(fp1, &s1, &unknown);
+  read_size_from_file(fp2, &s2, &unknown);
+  (*size) = s1 + s2;
+
+  // Initial local data array
+  double *lx, *ly, *lz, *lvx, *lvy, *lvz, *lm;
+  lx = (double*)malloc((*size) * 7 * sizeof(double));
+  ly = lx + (*size);
+  lz = ly + (*size);
+  lvx = lz + (*size);
+  lvy = lvx + (*size);
+  lvz = lvy + (*size);
+  lm = lvz + (*size);
+  create_galaxy_file(fp1, lx, ly, lz, lvx, lvy, lvz, lm);
+  create_galaxy_file(fp2, lx + s1, ly + s1, lz + s1, lvx + s1, lvy + s1, lvz + s1, lm + s1);
+
+  // Allocate device memory
+  int numOfBlocks = ceil((double)(*size) / BLOCKSIZE);
+  cudaMalloc((void**)x, numOfBlocks * BLOCKSIZE * 7 * sizeof(double));
+  *y = *x + numOfBlocks * BLOCKSIZE;
+  *z = *y + numOfBlocks * BLOCKSIZE;
+  *vx = *z + numOfBlocks * BLOCKSIZE;
+  *vy = *vx + numOfBlocks * BLOCKSIZE;
+  *vz = *vy + numOfBlocks * BLOCKSIZE;
+  *mass = *vz + numOfBlocks * BLOCKSIZE;
+  cudaMemcpy((void*)(*x), (void*)lx, numOfBlocks * 7 * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  free(lx);
+  fclose(fp1);
+  fclose(fp2);
+}
+
+void read_size_from_file(FILE *fp, int *size, double *unknown){
+  if(feof(fp)){
+    printf("Error: file read error\n");
+    exit(0);
+  }
+  fscanf(fp, "%lu %lf", size, unknown);
 }
