@@ -141,14 +141,6 @@ void create_galaxy_file(FILE *fp, double* x, double* y, double* z, double* vx, d
   }
 }
 
-void create_galaxy_file(FILE *fp, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* mass){
-  int i = 0;
-  while(!feof(fp)){
-    fscanf(fp, "%lf %lf %lf %lf %lf %lf %lf", mass + i, x + i, y + i, z + i, vx + i, vy + i, vz + i);
-    i++;
-  }
-}
-
 __global__ void leapstep(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double dt){
   const unsigned int serial = blockIdx.x * BLOCKSIZE + threadIdx.x;
   if(serial < n){
