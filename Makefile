@@ -73,4 +73,4 @@ test: gputest.cu
 	$(COMPILER) $(CFLAGS) $(LIBRARY) -o test gputest.cu
 
 clean:
-	$(RM) antennae test andromeda
+	$(RM) antennae test andromeda_3b andromeda_nb
