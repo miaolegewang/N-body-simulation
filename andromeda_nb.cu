@@ -183,12 +183,6 @@ __global__ void printstate(int n, double *x, double *y, double *z, double *vx, d
 }
 
 void initialCondition_host_file(char *input1, char *input2, double **x, double **y, double **z, double **vx, double **vy, double **vz, double **mass, int *size){
-  FILE *fp1 = fopen(input1, "r");
-  FILE *fp2 = fopen(input2, "r");
-  if(fp1 == NULL || fp2 == NULL){
-    printf("Error: fail to open a file.\n");
-    exit(-1);
-  }
   int s1, s2;
   double unknown;
   read_size_from_file(input1, &s1);
@@ -196,16 +190,16 @@ void initialCondition_host_file(char *input1, char *input2, double **x, double *
   read_size_from_file(input2, &s2);
   (*size) += s2;
   s1 = (*size) - s2;
-
+  int numOfBlocks = ceil((double)(*size) / BLOCKSIZE);
   // Initial local data array
   double *lx, *ly, *lz, *lvx, *lvy, *lvz, *lm;
-  lx = (double*)malloc((*size) * 7 * sizeof(double));
-  ly = lx + (*size);
-  lz = ly + (*size);
-  lvx = lz + (*size);
-  lvy = lvx + (*size);
-  lvz = lvy + (*size);
-  lm = lvz + (*size);
+  lx = (double*)malloc(numOfBlocks * BLOCKSIZE * 7 * sizeof(double));
+  ly = lx + numOfBlocks * BLOCKSIZE;
+  lz = ly + numOfBlocks * BLOCKSIZE;
+  lvx = lz + numOfBlocks * BLOCKSIZE;
+  lvy = lvx + numOfBlocks * BLOCKSIZE;
+  lvz = lvy + numOfBlocks * BLOCKSIZE;
+  lm = lvz + numOfBlocks * BLOCKSIZE;
 
   // Read data from file1
   FILE *fp = fopen(input1, "r");
@@ -218,16 +212,16 @@ void initialCondition_host_file(char *input1, char *input2, double **x, double *
   int count = 0;
   fscanf(fp, "%lu %lf", &junk1, &junk2);    // skip first line
   double omega = 0.0, sigma = PI / 2.0;
-  while(!feof(fp)){
+  while(!feof(fp) && count < s1){
     fscanf(fp, "%lf %lf %lf %lf %lf %lf %lf", lm + count, lx + count, ly + count, lz + count, lvx + count, lvy + count, lvz + count);
+    rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
+    rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
     *(lx + count) += MilkwayXOffsetP;
     *(ly + count) += MilkwayYOffsetP;
     *(lz + count) += MilkwayZOffsetP;
     *(lvx + count) += MilkwayXOffsetV;
     *(lvy + count) += MilkwayYOffsetV;
     *(lvz + count) += MilkwayZOffsetV;
-    rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
-    rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
     count++;
   }
   fclose(fp);
@@ -241,21 +235,28 @@ void initialCondition_host_file(char *input1, char *input2, double **x, double *
   fscanf(fp, "%lu %lf", &junk1, &junk2);    // skip first line
   omega = -2 * PI / 3;
   sigma = PI / 6;
-  while(!feof(fp)){
+  while(!feof(fp) && count < (*size)){
     fscanf(fp, "%lf %lf %lf %lf %lf %lf %lf", lm + count, lx + count, ly + count, lz + count, lvx + count, lvy + count, lvz + count);
+    rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
+    rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
     *(lx + count) += AndromedaXOffsetP;
     *(ly + count) += AndromedaYOffsetP;
     *(lz + count) += AndromedaZOffsetP;
     *(lvx + count) += AndromedaXOffsetV;
     *(lvy + count) += AndromedaYOffsetV;
     *(lvz + count) += AndromedaZOffsetV;
-    rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
-    rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
     count++;
   }
   fclose(fp);
+  size_t extra = numOfBlocks * BLOCKSIZE - (*size);
+  memset(lx + count, 0, extra * sizeof(double));
+  memset(ly + count, 0, extra * sizeof(double));
+  memset(lz + count, 0, extra * sizeof(double));
+  memset(lvx + count, 0, extra * sizeof(double));
+  memset(lvy + count, 0, extra * sizeof(double));
+  memset(lvz + count, 0, extra * sizeof(double));
+  memset(lm + count, 0, extra * sizeof(double));
   // Allocate device memory
-  int numOfBlocks = ceil((double)(*size) / BLOCKSIZE);
   cudaMalloc((void**)x, numOfBlocks * BLOCKSIZE * 7 * sizeof(double));
   *y = *x + numOfBlocks * BLOCKSIZE;
   *z = *y + numOfBlocks * BLOCKSIZE;
@@ -263,16 +264,14 @@ void initialCondition_host_file(char *input1, char *input2, double **x, double *
   *vy = *vx + numOfBlocks * BLOCKSIZE;
   *vz = *vy + numOfBlocks * BLOCKSIZE;
   *mass = *vz + numOfBlocks * BLOCKSIZE;
-  cudaMemcpy((void**)x, lx, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy((void**)y, ly, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy((void**)z, lz, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy((void**)vx, lvx, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy((void**)vy, lvy, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy((void**)vz, lvz, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy((void**)mass, lm, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy(*x, lx, (size_t)numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy(*y, ly, (size_t)numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy(*z, lz, (size_t)numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy(*vx, lvx, (size_t)numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy(*vy, lvy, (size_t)numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy(*vz, lvz, (size_t)numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy(*mass, lm, (size_t)numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
   free(lx);
-  fclose(fp1);
-  fclose(fp2);
 }
 
 void read_size_from_file(char *input, int *size){
