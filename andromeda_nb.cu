@@ -55,22 +55,20 @@ int main(int argc, char *argv[])
    *
    */
   cudaDeviceSetLimit(cudaLimitPrintfFifoSize, n * BUFFERSIZE);
-
   /*  Start looping steps from first step to mstep  */
   for(int i = 0; i < offset; i++, tnow++){
-    cudaDeviceSynchronize();
     accel<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
     leapstep<<< grids, threads >>>(n, x, y, z, vx, vy, vz, dt);
     cudaDeviceSynchronize();
     accel<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
+    //counter++;
   }
   for(int i = offset; i < mstep; i++, tnow++){
     if(i % nout == 0)
       printstate<<< grids, threads >>>(n, x, y, z, vx, vy, vz, tnow);
     cudaDeviceSynchronize();
-
     /*
      *  Use cudaDeviceSynchronize() to wait till all blocks of threads
      *   finish running the kernel functions
@@ -100,7 +98,6 @@ int main(int argc, char *argv[])
   cudaFree(mass);
 
   // Exit the current thread
-  cudaThreadExit();
   return 0;
 }
 
@@ -150,25 +147,27 @@ __global__ void accel(int n, double *x, double *y, double *z, double *vx, double
   __shared__ double ly[BLOCKSIZE];
   __shared__ double lz[BLOCKSIZE];
   __shared__ double lm[BLOCKSIZE];
-
   double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = x[serial], thisY = y[serial], thisZ = z[serial];
   for(int i = 0; i < gridDim.x; i++){
     // Copy data from main memory
-    lx[tdx] = x[i * blockDim.x + tdx];
-    lz[tdx] = y[i * blockDim.x + tdx];
-    ly[tdx] = z[i * blockDim.x + tdx];
+    lx[tdx] = x[i * BLOCKSIZE + tdx];
+    lz[tdx] = y[i * BLOCKSIZE + tdx];
+    ly[tdx] = z[i * BLOCKSIZE + tdx];
+    lm[tdx] = mass[i * BLOCKSIZE + tdx];
     __syncthreads();
     // Accumulates the acceleration
-    for(int j = 0; j < blockDim.x; j++){
+    for(int j = 0; j < BLOCKSIZE; j++){
       norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-      if(i * BLOCKSIZE + j != serial){
-        ax += - G * lm[i * blockDim.x + j] * (thisX - lx[j]) / norm;
-        ay += - G * lm[i * blockDim.x + j] * (thisY - ly[j]) / norm;
-        az += - G * lm[i * blockDim.x + j] * (thisZ - lz[j]) / norm;
-      }
+      //if(i * BLOCKSIZE + j != serial){
+        ax += - G * lm[j] * (thisX - lx[j]) / norm;
+        ay += - G * lm[j] * (thisY - ly[j]) / norm;
+        az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      //}
     }
+    __syncthreads();
   }
   if(serial < n){
+    //printf("%d\n", serial);
     vx[serial] += 0.5 * dt * ax;
     vy[serial] += 0.5 * dt * ay;
     vz[serial] += 0.5 * dt * az;

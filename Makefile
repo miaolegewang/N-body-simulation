@@ -13,7 +13,11 @@ COMPILER = /usr/local/cuda-5.5/bin/nvcc
 # -g  		adds debugging information to the executable file
 # -Wall 	turns on most, but not all, compiler warnings
 # -arch=sm_20  enables double-type variables in cuda
-CFLAGS = -g -arch=sm_20
+CFLAGS = -arch=sm_20
+ifdef debug
+	CFLAGS += -g
+endif
+
 
 # set flag for environment
 # if env is set then the code is compiled under windows 10 environment
