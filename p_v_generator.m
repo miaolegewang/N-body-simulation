@@ -1,16 +1,16 @@
-G = 0.287915013;
-M1 = 17;    %Mass of Milkway. You can modify it
-M2 = 36;    %Mass of Andromeda. You can modify it  
+G = 1;
+M1 = 38.2352941;    %Mass of Milkway. 5.1*10^10
+M2 = 38.2352941;    %Mass of Andromeda. 5.1*10^10
 distance = 780; %Relative position of Milkyway and Andromeda
 l = 121; %Adromeda position in galactic coordinate(l,b);
 b = -23;
 vr_mag = 117;     %relative radius velocity. km/s
 vt_mag = 40;      %relative tranverse velocity.  km/s
-translate = 0.00408804856;  %unit km/s to 25 kpc / 10^8 year. 
+translate = 0.00454545455;  %unit 1 km/s to 4.5 kpc / 2*10^7 year, also 220 km/s. 
 
 
-x1 = distance * cos((b/360)*2*pi) * cos((l/360)*2*pi)/25;  %translate to xyz unit 25kpc
-y1 = distance * cos((b/360)*2*pi) * sin((l/360)*2*pi)/25;
+x1 = distance * cos((b/360)*2*pi) * cos((l/360)*2*pi)/4.5;  %translate to xyz unit 4.5 kpc
+y1 = distance * cos((b/360)*2*pi) * sin((l/360)*2*pi)/4.5;
 z1 = distance * sin((b/360)*2*pi)/25;
 
 radius1 = [x1, y1, z1];  
