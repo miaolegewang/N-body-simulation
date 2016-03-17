@@ -59,8 +59,14 @@ all: clean antennae andromeda
 antennae: $(OBJECTS)
 	$(COMPILER) $(CFLAGS) $(LIBRARY) -o antennae $(OBJECTS)
 
-andromeda: andromeda.cu
-	$(COMPILER) $(CFLAGS) $(LIBRARY) -o andromeda andromeda.cu
+andromeda: andromeda_nb andromeda_3b
+
+andromeda_nb:
+	$(COMPILER) $(CFLAGS) $(LIBRARY) -o andromeda_nb andromeda_nb.cu
+
+andromeda_3b:
+	$(COMPILER) $(CFLAGS) $(LIBRARY) -o andromeda_3b andromeda_3b.cu
+
 
 # Make file test
 test: gputest.cu
