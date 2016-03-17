@@ -177,7 +177,7 @@ __global__ void accel(int n, double *x, double *y, double *z, double *vx, double
 
 __global__ void printstate(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, int tnow){
   const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
-  if(serial < n){
+  if(serial < 10000 || (serial > 44000 && serial < 54001)){
     printf("%d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %d\n", serial, x[serial], y[serial], z[serial], vx[serial], vy[serial], vz[serial], tnow);
   }
 }
@@ -217,11 +217,17 @@ void initialCondition_host_file(char *input1, char *input2, double **x, double *
   double junk2;
   int count = 0;
   fscanf(fp, "%lu %lf", &junk1, &junk2);    // skip first line
+  double omega = 0.0, sigma = PI / 2.0;
   while(!feof(fp)){
     fscanf(fp, "%lf %lf %lf %lf %lf %lf %lf", lm + count, lx + count, ly + count, lz + count, lvx + count, lvy + count, lvz + count);
-    *(lx + count) += MilkwayXOffset;
-    *(ly + count) += MilkwayYOffset;
-    *(lz + count) += MilkwayZOffset;
+    *(lx + count) += MilkwayXOffsetP;
+    *(ly + count) += MilkwayYOffsetP;
+    *(lz + count) += MilkwayZOffsetP;
+    *(lvx + count) += MilkwayXOffsetV;
+    *(lvy + count) += MilkwayYOffsetV;
+    *(lvz + count) += MilkwayZOffsetV;
+    rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
+    rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
     count++;
   }
   fclose(fp);
@@ -233,11 +239,18 @@ void initialCondition_host_file(char *input1, char *input2, double **x, double *
     exit(-1);
   }
   fscanf(fp, "%lu %lf", &junk1, &junk2);    // skip first line
+  omega = -2 * PI / 3;
+  sigma = PI / 6;
   while(!feof(fp)){
     fscanf(fp, "%lf %lf %lf %lf %lf %lf %lf", lm + count, lx + count, ly + count, lz + count, lvx + count, lvy + count, lvz + count);
-    *(lx + count) += AndromedaXOffset;
-    *(ly + count) += AndromedaYOffset;
-    *(lz + count) += AndromedaZOffset;
+    *(lx + count) += AndromedaXOffsetP;
+    *(ly + count) += AndromedaYOffsetP;
+    *(lz + count) += AndromedaZOffsetP;
+    *(lvx + count) += AndromedaXOffsetV;
+    *(lvy + count) += AndromedaYOffsetV;
+    *(lvz + count) += AndromedaZOffsetV;
+    rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
+    rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
     count++;
   }
   fclose(fp);

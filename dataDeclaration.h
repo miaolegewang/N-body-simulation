@@ -33,11 +33,17 @@
 #define RING_BASE_2 (RMIN * 0.2)       // Radius of first ring in 2nd galaxy
 #define INC_R_RING (RMIN * 0.05)      // increment of radius of rings each step
 #define SOFTPARAMETER 0.000001
-#define AndromedaXOffset -41.0882
-#define AndromedaYOffset 68.3823
-#define AndromedaZOffset -6.0954
-#define MilkwayXOffset 41.0882
-#define MilkwayYOffset -68.3823
-#define MilkwayZOffset 6.0954
+#define AndromedaXOffsetP -41.0882
+#define AndromedaYOffsetP 68.3823
+#define AndromedaZOffsetP -33.8634
+#define AndromedaXOffsetV 0.0420
+#define AndromedaYOffsetV -0.2504
+#define AndromedaZOffsetV 0.1240
+#define MilkwayXOffsetP 41.0882
+#define MilkwayYOffsetP -68.3823
+#define MilkwayZOffsetP 33.8634
+#define MilkwayXOffsetV -0.0420
+#define MilkwayYOffsetV 0.2504
+#define MilkwayZOffsetV -0.1240
 
 #endif
