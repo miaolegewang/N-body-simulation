@@ -5,13 +5,13 @@ distance = 780; %Relative position of Milkyway and Andromeda
 l = 121; %Adromeda position in galactic coordinate(l,b);
 b = -23;
 vr_mag = 117;     %relative radius velocity. km/s
-vt_mag = 20;      %relative tranverse velocity.  km/s
+vt_mag = 42;      %relative tranverse velocity.  km/s
 translate = 0.00454545455;  %unit 1 km/s to 4.5 kpc / 2*10^7 year, also 220 km/s. 
 
 
 x1 = distance * cos((b/360)*2*pi) * cos((l/360)*2*pi)/4.5;  %translate to xyz unit 4.5 kpc
 y1 = distance * cos((b/360)*2*pi) * sin((l/360)*2*pi)/4.5;
-z1 = distance * sin((b/360)*2*pi)/25;
+z1 = distance * sin((b/360)*2*pi)/4.5;
 
 radius1 = [x1, y1, z1];  
 radius2 = [0,0,0];                                                             
