@@ -133,14 +133,6 @@ void rotate(double* x, double* y, double *z, double n1, double n2, double n3, do
 
 }
 
-void create_galaxy_file(FILE *fp, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* mass){
-  int i = 0;
-  while(!feof(fp)){
-    fscanf(fp, "%lf %lf %lf %lf %lf %lf %lf", mass + i, x + i, y + i, z + i, vx + i, vy + i, vz + i);
-    i++;
-  }
-}
-
 __global__ void leapstep(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double dt){
   const unsigned int serial = blockIdx.x * BLOCKSIZE + threadIdx.x;
   if(serial < n){
@@ -193,11 +185,18 @@ __global__ void printstate(int n, double *x, double *y, double *z, double *vx, d
 void initialCondition_host_file(char *input1, char *input2, double **x, double **y, double **z, double **vx, double **vy, double **vz, double **mass, int *size){
   FILE *fp1 = fopen(input1, "r");
   FILE *fp2 = fopen(input2, "r");
+  if(fp1 == NULL || fp2 == NULL){
+    printf("Error: fail to open a file.\n");
+    exit(-1);
+  }
+  int s1, s2;
   double unknown;
-  int s1 = 0, s2 = 0;
-  read_size_from_file(fp1, &s1, &unknown);
-  read_size_from_file(fp2, &s2, &unknown);
-  (*size) = s1 + s2;
+  read_size_from_file(input1, &s1);
+  (*size) = s1;
+  read_size_from_file(input2, &s2);
+  (*size) += s2;
+  s1 = (*size) - s2;
+
   // Initial local data array
   double *lx, *ly, *lz, *lvx, *lvy, *lvz, *lm;
   lx = (double*)malloc((*size) * 7 * sizeof(double));
@@ -207,9 +206,41 @@ void initialCondition_host_file(char *input1, char *input2, double **x, double *
   lvy = lvx + (*size);
   lvz = lvy + (*size);
   lm = lvz + (*size);
-  create_galaxy_file(fp1, lx, ly, lz, lvx, lvy, lvz, lm);
-  create_galaxy_file(fp2, lx + s1, ly + s1, lz + s1, lvx + s1, lvy + s1, lvz + s1, lm + s1);
 
+  // Read data from file1
+  FILE *fp = fopen(input1, "r");
+  if(fp == NULL){
+    printf("Error: fail to open file 1\n");
+    exit(-1);
+  }
+  int junk1;
+  double junk2;
+  int count = 0;
+  fscanf(fp, "%lu %lf", &junk1, &junk2);    // skip first line
+  while(!feof(fp)){
+    fscanf(fp, "%lf %lf %lf %lf %lf %lf %lf", lm + count, lx + count, ly + count, lz + count, lvx + count, lvy + count, lvz + count);
+    *(lx + count) += MilkwayXOffset;
+    *(ly + count) += MilkwayYOffset;
+    *(lz + count) += MilkwayZOffset;
+    count++;
+  }
+  fclose(fp);
+
+  // Read data from file2
+  fp = fopen(input2, "r");
+  if(fp == NULL){
+    printf("Error: fail to open file 2\n");
+    exit(-1);
+  }
+  fscanf(fp, "%lu %lf", &junk1, &junk2);    // skip first line
+  while(!feof(fp)){
+    fscanf(fp, "%lf %lf %lf %lf %lf %lf %lf", lm + count, lx + count, ly + count, lz + count, lvx + count, lvy + count, lvz + count);
+    *(lx + count) += AndromedaXOffset;
+    *(ly + count) += AndromedaYOffset;
+    *(lz + count) += AndromedaZOffset;
+    count++;
+  }
+  fclose(fp);
   // Allocate device memory
   int numOfBlocks = ceil((double)(*size) / BLOCKSIZE);
   cudaMalloc((void**)x, numOfBlocks * BLOCKSIZE * 7 * sizeof(double));
@@ -219,16 +250,22 @@ void initialCondition_host_file(char *input1, char *input2, double **x, double *
   *vy = *vx + numOfBlocks * BLOCKSIZE;
   *vz = *vy + numOfBlocks * BLOCKSIZE;
   *mass = *vz + numOfBlocks * BLOCKSIZE;
-  cudaMemcpy((void*)(*x), (void*)lx, numOfBlocks * 7 * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy((void**)x, lx, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy((void**)y, ly, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy((void**)z, lz, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy((void**)vx, lvx, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy((void**)vy, lvy, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy((void**)vz, lvz, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
+  cudaMemcpy((void**)mass, lm, numOfBlocks * BLOCKSIZE * sizeof(double), cudaMemcpyHostToDevice);
   free(lx);
   fclose(fp1);
   fclose(fp2);
 }
 
-void read_size_from_file(FILE *fp, int *size, double *unknown){
-  if(feof(fp)){
-    printf("Error: file read error\n");
-    exit(0);
-  }
-  fscanf(fp, "%lu %lf", size, unknown);
+void read_size_from_file(char *input, int *size){
+  FILE *fp = fopen(input, "r");
+  double unknown;
+  fscanf(fp, "%lu", size);
+  (*size)++;
+  fclose(fp);
 }

@@ -40,7 +40,7 @@ void initialCondition_host_file(char *, char *, double **, double **, double **,
  *                 [mass array addr] [size addr]
  *
  */
-void create_galaxy_file(FILE *, double*, double*, double*, double*, double*, double*, double*);
+void read_size_from_file(char*, double*, double*, double*, double*, double*, double*, double*);
 /*
  *  create_galaxy_file - host function: create galaxy by reading data from file
  *    parameters:
@@ -116,4 +116,4 @@ void create_galaxy_file(FILE *, double*, double*, double*, double*, double*, dou
  *
  */
 void rotate(double*, double*, double*, double, double, double, double);
-void read_size_from_file(FILE*, int*, double*);
+void read_size_from_file(char*, int*);
