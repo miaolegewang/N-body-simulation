@@ -5,7 +5,7 @@ distance = 780; %Relative position of Milkyway and Andromeda
 l = 121; %Adromeda position in galactic coordinate(l,b);
 b = -23;
 vr_mag = 117;     %relative radius velocity. km/s
-vt_mag = 40;      %relative tranverse velocity.  km/s
+vt_mag = 20;      %relative tranverse velocity.  km/s
 translate = 0.00454545455;  %unit 1 km/s to 4.5 kpc / 2*10^7 year, also 220 km/s. 
 
 
@@ -45,7 +45,7 @@ vsum_kpcy =  vr_kpcy + vt_kpcy;
 v_absolute = vsum_kpcy;
 
 centerv = v_absolute/(M1 + M2);
-v_1 = -M2 * centerv;
+v_1 = M2 * centerv;
 v_2 = (-M1/M2)*v_1;
 
 p_milkway = c_1;    %position of milkway(x,y,z)
