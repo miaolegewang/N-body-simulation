@@ -37,9 +37,9 @@
 // #define AU 149597870700.0
 // #define R (77871.0 * 1000.0 / AU)
 // #define G (4.0 * pow(PI, 2))
-#define G 0.287915013
-#define MASS_1 17.0              // Center mass of 1st galaxy
-#define MASS_2 36.0                // Center mass of 2nd galaxy
+#define G 1
+#define MASS_1 38.2352941              // Center mass of 1st galaxy
+#define MASS_2 38.2352941                // Center mass of 2nd galaxy
 #define NUM_OF_RING_1 12         // Number of rings in 1st galaxy
 #define NUM_OF_RING_2 12          // Number of rings in 2nd galaxy
 // #define RING_BASE_1 (R * 0.2)       // Radius of first ring in 1st galaxy
@@ -50,7 +50,7 @@
 #define PMASS 1             // mass of each particle
 #define V_PARAMTER 1            // Parameter adding to initial velocity to make it elliptic
 //#define RMIN (172.5 / 25)
-#define RMIN (7.733/25)
+#define RMIN (7.733/4.5)
 #define ECCEN 0.5
 #define RMAX ((1.0 + ECCEN) * RMIN / (1.0 - ECCEN))
 #define RING_BASE_1 (RMIN * 0.2)       // Radius of first ring in 1st galaxy
@@ -314,12 +314,12 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    */
 
    // Milky Way setup
-   lx[0] = 9.8165;
-   ly[0] = -16.7203;
-   lz[0] = 8.2814;
-   lvx[0] = -0.1248;
-   lvy[0] = 0.1057;
-   lvz[0] = -0.0523;
+   lx[0] = 41.0882;
+   ly[0] = -68.3823;
+   lz[0] = 33.8634;
+   lvx[0] = -0.0760;
+   lvy[0] = 0.2339;
+   lvz[0] = -0.1159;
 
 
    double cx = lx[0], cy = ly[0], cz = lz[0], cvx = lvx[0], cvy = lvy[0], cvz = lvz[0];
@@ -365,12 +365,12 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    }
 
    // M31 way setup
-   lx[numofp1] = -4.6355;
-   ly[numofp1] = 7.8957;
-   lz[numofp1] = -3.9106;
-   lvx[numofp1] = 0.0589;
-   lvy[numofp1] = -0.0499;
-   lvz[numofp1] = 0.0247;
+   lx[numofp1] = -41.0882;
+   ly[numofp1] = 68.3823;
+   lz[numofp1] = -33.8634;
+   lvx[numofp1] = 0.0760;
+   lvy[numofp1] = -0.2339;
+   lvz[numofp1] = 0.1159;
 
    cx = lx[count];
    cy = ly[count];
