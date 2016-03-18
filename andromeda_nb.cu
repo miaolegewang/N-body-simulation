@@ -156,48 +156,13 @@ __global__ void accel(int n, double *x, double *y, double *z, double *vx, double
     lm[tdx] = mass[i * BLOCKSIZE + tdx];
     __syncthreads();
     // Accumulates the acceleration
-    for(int j = 0; j < BLOCKSIZE;){
+    #pragma unroll
+    for(int j = 0; j < BLOCKSIZE;j++){
       // loop unrolling
       norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
       ax += - G * lm[j] * (thisX - lx[j]) / norm;
       ay += - G * lm[j] * (thisY - ly[j]) / norm;
       az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      j++;
-      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-      ax += - G * lm[j] * (thisX - lx[j]) / norm;
-      ay += - G * lm[j] * (thisY - ly[j]) / norm;
-      az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      j++;
-      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-      ax += - G * lm[j] * (thisX - lx[j]) / norm;
-      ay += - G * lm[j] * (thisY - ly[j]) / norm;
-      az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      j++;
-      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-      ax += - G * lm[j] * (thisX - lx[j]) / norm;
-      ay += - G * lm[j] * (thisY - ly[j]) / norm;
-      az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      j++;
-      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-      ax += - G * lm[j] * (thisX - lx[j]) / norm;
-      ay += - G * lm[j] * (thisY - ly[j]) / norm;
-      az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      j++;
-      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-      ax += - G * lm[j] * (thisX - lx[j]) / norm;
-      ay += - G * lm[j] * (thisY - ly[j]) / norm;
-      az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      j++;
-      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-      ax += - G * lm[j] * (thisX - lx[j]) / norm;
-      ay += - G * lm[j] * (thisY - ly[j]) / norm;
-      az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      j++;
-      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-      ax += - G * lm[j] * (thisX - lx[j]) / norm;
-      ay += - G * lm[j] * (thisY - ly[j]) / norm;
-      az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      j++;
     }
     __syncthreads();
   }
