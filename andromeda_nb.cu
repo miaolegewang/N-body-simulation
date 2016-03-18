@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
   mstep = argc > 1 ? atoi(argv[1]) : 100;
   nout = argc > 2 ? atoi(argv[2]) : 1;
   offset = argc > 3 ? atoi(argv[3]) : 0;
-  dt = argc > 4 ? atof(argv[4]) : 2 * PI * RMIN * RMIN /sqrt(G * MASS_1) / 200.0;
+  dt = argc > 4 ? atof(argv[4]) : 2 * PI * RMIN * RMIN /sqrt(G * MASS_1) / 40.0;
 //   dt = argc > 4 ? atof(argv[4]) : 0.1;
   initialCondition_host_file("milky_way.dat", "andromeda.dat", &x, &y, &z, &vx, &vy, &vz, &mass, &n);
   int grids = ceil((double)n / BLOCKSIZE), threads = BLOCKSIZE;
@@ -141,7 +141,7 @@ __global__ void leapstep(int n, double *x, double *y, double *z, double *vx, dou
 
 
 __global__ void accel(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double* mass, double dt){
-  const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned int serial = blockIdx.x * BLOCKSIZE + threadIdx.x;
   const unsigned int tdx = threadIdx.x;
   __shared__ double lx[BLOCKSIZE];
   __shared__ double ly[BLOCKSIZE];
@@ -156,13 +156,48 @@ __global__ void accel(int n, double *x, double *y, double *z, double *vx, double
     lm[tdx] = mass[i * BLOCKSIZE + tdx];
     __syncthreads();
     // Accumulates the acceleration
-    for(int j = 0; j < BLOCKSIZE; j++){
+    for(int j = 0; j < BLOCKSIZE;){
+      // loop unrolling
       norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-      //if(i * BLOCKSIZE + j != serial){
-        ax += - G * lm[j] * (thisX - lx[j]) / norm;
-        ay += - G * lm[j] * (thisY - ly[j]) / norm;
-        az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      //}
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      j++;
     }
     __syncthreads();
   }
