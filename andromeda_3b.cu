@@ -451,29 +451,64 @@ __global__ void accel(int n, double *x, double *y, double *z, double *vx, double
   __shared__ double lx[BLOCKSIZE];
   __shared__ double ly[BLOCKSIZE];
   __shared__ double lz[BLOCKSIZE];
-
-  if(serial < n){
-    double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = x[serial], thisY = y[serial], thisZ = z[serial];
-    for(int i = 0; i < gridDim.x; i++){
-      // Copy data from main memory
-      lx[tdx] = x[i * BLOCKSIZE + tdx];
-      lz[tdx] = y[i * BLOCKSIZE + tdx];
-      ly[tdx] = z[i * BLOCKSIZE + tdx];
-      __syncthreads();
-
-      // Accumulates the acceleration
-      int itrSize = min(BLOCKSIZE, n - i * BLOCKSIZE);
-      for(int j = 0; j < itrSize; j++){
-        norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
-        if(i * BLOCKSIZE + j != serial){
-          ax += - G * mass[i * BLOCKSIZE + j] * (thisX - lx[j]) / norm;
-          ay += - G * mass[i * BLOCKSIZE + j] * (thisY - ly[j]) / norm;
-          az += - G * mass[i * BLOCKSIZE + j] * (thisZ - lz[j]) / norm;
-        }
-      }
+  __shared__ double lm[BLOCKSIZE];
+  int halfsize = BLOCKSIZE / 2;
+  double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = x[serial], thisY = y[serial], thisZ = z[serial];
+  for(int i = 0; i < gridDim.x; i++){
+    // Copy data from main memory
+    lx[tdx] = x[i * BLOCKSIZE + tdx];
+    lz[tdx] = y[i * BLOCKSIZE + tdx];
+    ly[tdx] = z[i * BLOCKSIZE + tdx];
+    lm[tdx] = mass[i * BLOCKSIZE + tdx];
+    lx[tdx + halfsize] = x[i * BLOCKSIZE + tdx + halfsize];
+    ly[tdx + halfsize] = y[i * BLOCKSIZE + tdx + halfsize];
+    lz[tdx + halfsize] = z[i * BLOCKSIZE + tdx + halfsize];
+    lm[tdx + halfsize] = mass[i * BLOCKSIZE + tdx + halfsize];
+    __syncthreads();
+    // Accumulates the acceleration
+    for(int j = 0; j < BLOCKSIZE / 2;){
+      // loop unrolling
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j + halfsize], 2) + pow(thisY - ly[j + halfsize], 2) + pow(thisZ - lz[j + halfsize], 2), 1.5);
+      ax += - G * lm[j + halfsize] * (thisX - lx[j + halfsize]) / norm;
+      ay += - G * lm[j + halfsize] * (thisY - ly[j + halfsize]) / norm;
+      az += - G * lm[j + halfsize] * (thisZ - lz[j + halfsize]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j + halfsize], 2) + pow(thisY - ly[j + halfsize], 2) + pow(thisZ - lz[j + halfsize], 2), 1.5);
+      ax += - G * lm[j + halfsize] * (thisX - lx[j + halfsize]) / norm;
+      ay += - G * lm[j + halfsize] * (thisY - ly[j + halfsize]) / norm;
+      az += - G * lm[j + halfsize] * (thisZ - lz[j + halfsize]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j + halfsize], 2) + pow(thisY - ly[j + halfsize], 2) + pow(thisZ - lz[j + halfsize], 2), 1.5);
+      ax += - G * lm[j + halfsize] * (thisX - lx[j + halfsize]) / norm;
+      ay += - G * lm[j + halfsize] * (thisY - ly[j + halfsize]) / norm;
+      az += - G * lm[j + halfsize] * (thisZ - lz[j + halfsize]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j + halfsize], 2) + pow(thisY - ly[j + halfsize], 2) + pow(thisZ - lz[j + halfsize], 2), 1.5);
+      ax += - G * lm[j + halfsize] * (thisX - lx[j + halfsize]) / norm;
+      ay += - G * lm[j + halfsize] * (thisY - ly[j + halfsize]) / norm;
+      az += - G * lm[j + halfsize] * (thisZ - lz[j + halfsize]) / norm;
+      j++;
     }
-
-    // Updates velocities in each directions
+    __syncthreads();
+  }
+  if(serial < n){
+    //printf("%d\n", serial);
     vx[serial] += 0.5 * dt * ax;
     vy[serial] += 0.5 * dt * ay;
     vz[serial] += 0.5 * dt * az;
