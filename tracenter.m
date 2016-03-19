@@ -19,4 +19,7 @@ function tracenter(Filename,ind_center)
   dist = (xcenter1-xcenter2).^2 + (ycenter1-ycenter2).^2 + (zcenter1 - zcenter2).^2;
   dist = sqrt(dist);
   plot(tnow,dist);
+  hold on;
+  xlabel('time   unit:3.52e+6 year');
+  ylabel('distance  unit:4.5 kpc');
 end
