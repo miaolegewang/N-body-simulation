@@ -45,11 +45,11 @@
 
 // Headers
 void rotate(double* x, double* y, double *z, double n1, double n2, double n3, double theta);
-__global__ void leapstep(unsigned int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double dt);
-__global__ void accel(unsigned int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double* mass, double dt);
-__global__ void printstate(double *x, double *y, double *z, unsigned int tnow);
-void initialCondition_host_file(char *input1, char *input2, double **x, double **y, double **z, double **vx, double **vy, double **vz, double **mass, unsigned int *size);
-void read_size_from_file(char *input, unsigned int *size) ;
+__global__ void leapstep(unsigned long n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double dt);
+__global__ void accel(unsigned long n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double* mass, double dt);
+__global__ void printstate(double *x, double *y, double *z, unsigned long tnow);
+void initialCondition_host_file(char *input1, char *input2, double **x, double **y, double **z, double **vx, double **vy, double **vz, double **mass, unsigned long *size);
+void read_size_from_file(char *input, unsigned long *size) ;
 
 /**     Main function     **/
 int main(int argc, char *argv[]) {
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
    *    4. timestamp (dt)
    *
    */
-  unsigned int mstep, nout, offset, tnow = 0, n;
+  unsigned long mstep, nout, offset, tnow = 0, n;
   double dt, *x, *y, *z, *vx, *vy, *vz, *mass;
 
   mstep = (argc > 1) ? atoi(argv[1]) : 100;
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
 
   initialCondition_host_file("milky_way.dat", "andromeda.dat", &x, &y, &z, &vx, &vy, &vz, &mass, &n);
 
-  unsigned int grids = ceil((double)n / BLOCKSIZE), threads = BLOCKSIZE;
+  unsigned long grids = ceil((double)n / BLOCKSIZE), threads = BLOCKSIZE;
 
   /*
    *  Use cudaDeviceSetLimit() to change the buffer size of printf
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   cudaDeviceSetLimit(cudaLimitPrintfFifoSize, n * BUFFERSIZE);
 
   /*  Start looping steps from first step to mstep  */
-  for (unsigned int i = 0; i < offset; i++, tnow++){
+  for (unsigned long i = 0; i < offset; i++, tnow++){
     accel<<<grids, BLOCKSIZE>>> (n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
     leapstep<<<grids, BLOCKSIZE>>> (n, x, y, z, vx, vy, vz, dt);
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     accel<<<grids, BLOCKSIZE>>> (n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
   }
-  for (unsigned int i = offset; i < mstep; i++, tnow++) {
+  for (unsigned long i = offset; i < mstep; i++, tnow++) {
     if(i % nout == 0) {
       printstate<<<grids, threads>>> (x, y, z, tnow);
       cudaDeviceSynchronize();
@@ -131,8 +131,8 @@ void rotate(double* x, double* y, double *z, double n1, double n2, double n3, do
   (*z) = tmpz;
 }
 
-__global__ void leapstep(unsigned int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double dt) {
-  const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
+__global__ void leapstep(unsigned long n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double dt) {
+  const unsigned long serial = blockIdx.x * blockDim.x + threadIdx.x;
   if (serial < n){
     x[serial] += dt * vx[serial];
     y[serial] += dt * vy[serial];
@@ -140,9 +140,9 @@ __global__ void leapstep(unsigned int n, double *x, double *y, double *z, double
   }
 }
 
-__global__ void accel(unsigned int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double* mass, double dt) {
-  const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
-  const unsigned int tdx = threadIdx.x;
+__global__ void accel(unsigned long n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double* mass, double dt) {
+  const unsigned long serial = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned long tdx = threadIdx.x;
 
   __shared__ double lx[BLOCKSIZE];
   __shared__ double ly[BLOCKSIZE];
@@ -158,7 +158,7 @@ __global__ void accel(unsigned int n, double *x, double *y, double *z, double *v
     thisZ = z[serial];
   }
 
-  for (unsigned int i = 0; i < gridDim.x; i++) {
+  for (unsigned long i = 0; i < gridDim.x; i++) {
     unsigned long index = i * blockDim.x + tdx;
     if (index < n) {
       // Copy data from main memory
@@ -171,7 +171,7 @@ __global__ void accel(unsigned int n, double *x, double *y, double *z, double *v
 
     // Accumulates the acceleration
     #pragma unroll
-    for (unsigned int j = 0; j < BLOCKSIZE; j++) {
+    for (unsigned long j = 0; j < BLOCKSIZE; j++) {
       unsigned long pos = i * blockDim.x + j;
       if (pos >= n) {
         continue;
@@ -193,20 +193,20 @@ __global__ void accel(unsigned int n, double *x, double *y, double *z, double *v
   }
 }
 
-__global__ void printstate(double *x, double *y, double *z, unsigned int tnow) {
-  const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
+__global__ void printstate(double *x, double *y, double *z, unsigned long tnow) {
+  const unsigned long serial = blockIdx.x * blockDim.x + threadIdx.x;
   if(serial < 10000 || (serial >= 44000 && serial < 54000)){
     printf("%d,%12.6lf,%12.6lf,%12.6lf,%d\n", serial, x[serial], y[serial], z[serial], tnow);
   }
 }
 
-void initialCondition_host_file(char *input1, char *input2, double **x, double **y, double **z, double **vx, double **vy, double **vz, double **mass, unsigned int *size) {
-  unsigned int s1, s2;
+void initialCondition_host_file(char *input1, char *input2, double **x, double **y, double **z, double **vx, double **vy, double **vz, double **mass, unsigned long *size) {
+  unsigned long s1, s2;
   read_size_from_file(input1, &s1);
   (*size) = s1;
   read_size_from_file(input2, &s2);
   (*size) += s2;
-  unsigned int numOfBlocks = ceil(((double)(*size)) / BLOCKSIZE);
+  unsigned long numOfBlocks = ceil(((double)(*size)) / BLOCKSIZE);
 
   // Initial local data array
   double *lx, *ly, *lz, *lvx, *lvy, *lvz, *lm;
@@ -224,7 +224,7 @@ void initialCondition_host_file(char *input1, char *input2, double **x, double *
     printf("Error: fail to open file 1\n");
     exit(-1);
   }
-  unsigned int count = 0;
+  unsigned long count = 0;
 
   // Skip first galaxy
   unsigned long junk1;
@@ -261,7 +261,7 @@ void initialCondition_host_file(char *input1, char *input2, double **x, double *
   omega = - 2.0 * PI / 3.0;
   sigma = PI / 6.0;
 
-  while((feof(fp)) && (count < (*size))){
+  while((!feof(fp)) && (count < (*size))){
     fscanf(fp, "%lf %lf %lf %lf %lf %lf %lf\n", lm + count, lx + count, ly + count, lz + count, lvx + count, lvy + count, lvz + count);
     rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);
     rotate(lvx + count, lvy + count, lvz + count, cos(omega), sin(omega), 0, sigma);
@@ -287,7 +287,7 @@ void initialCondition_host_file(char *input1, char *input2, double **x, double *
   free(lx);
 }
 
-void read_size_from_file(char *input, unsigned int *size) {
+void read_size_from_file(char *input, unsigned long *size) {
   FILE *fp = fopen(input, "r");
   fscanf(fp, "%lu", size);
   fclose(fp);
