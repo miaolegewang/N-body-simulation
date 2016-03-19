@@ -27,7 +27,8 @@
 #define BUFFERSIZE 500
 #define BLOCKSIZE 256
 #define G 1.0
-#define MASS_1 38.2352941              // Center mass of Milky Way
+#define MASS_1 38.2352941
+#define RMIN (7.733/4.5)
 #define SOFTPARAMETER 0.000001
 #define AndromedaXOffsetP -41.0882
 #define AndromedaYOffsetP 68.3823
@@ -91,7 +92,7 @@ int main(int argc, char *argv[]) {
   }
   for (unsigned int i = offset; i < mstep; i++, tnow++) {
     if(i % nout == 0) {
-      printstate<<<grids, threads>>> (n, x, y, z, vx, vy, vz, tnow);
+      printstate<<<grids, threads>>> (n, x, y, z, tnow);
       cudaDeviceSynchronize();
     }
 
@@ -104,7 +105,7 @@ int main(int argc, char *argv[]) {
   }
 
   if(mstep % nout == 0) {
-    printstate<<<grids, BLOCKSIZE>>>(n, x, y, z, vx, vy, vz, tnow);
+    printstate<<<grids, BLOCKSIZE>>>(n, x, y, z, tnow);
   }
   cudaDeviceSynchronize();
 
