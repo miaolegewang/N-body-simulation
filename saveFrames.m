@@ -8,32 +8,31 @@ function saveFrames(Filename)
   num_frames = length(xdata)/num_points;
   disp(num_frames);
   num_particles = num_points/2;
-  parfor i = 1:num_frames
-      index1 = (((i-1)*num_points+1):i*num_points);  %the index of the data in the whole array
-      indicator = index(index1);
-      x = xdata(index1);
-      y = ydata(index1);
-      z = zdata(index1);
-      A = [indicator, x, y, z];
-      A = sortrows(A,1);  % sort the order of A by the index of particles
-      x1 = A(1:num_particles, 2);
-      y1 = A(1:num_particles, 3);
-      z1 = -A(1:num_particles, 4);
-      x2 = A((num_particles+1):num_points, 2);
-      y2 = A((num_particles+1):num_points, 3);
-      z2 = -A((num_particles+1):num_points, 4);
+  parfor j = 1:num_frames
+      galaxy_A = zeros(num_particles,3);
+      galaxy_B = zeros(num_particles,3);
+      for nrow = 1:num_points
+          i = nrow + (j-1) * num_points;
+          currindex = index(i) + 1;
+          if (currindex <= num_particles)
+              galaxy_A(currindex,:) = [xdata(i) ydata(i) zdata(i)];
+          else
+              galaxy_B(currindex-num_particles,:) = [xdata(i) ydata(i) zdata(i)];
+          end
+      end
       figure('Color','black');
-      plot3(x1,y1,z1,'.','Color','blue','Markersize',0.7);
+      plot3(galaxy_A(:,1),galaxy_A(:,2),-galaxy_A(:,3),'.','Color',[0.2 0.6 1.0],'Markersize',0.7);
       hold on;
-      plot3(x2,y2,z2,'.','Color','red','Markersize',0.7);
+      plot3(galaxy_B(:,1),galaxy_B(:,2),-galaxy_B(:,3),'.','Color','red','Markersize',0.7);
       axis equal;
-      axis([-3,3,-3,3,-3,3]);
-      %axis equal;
+      axis([-200,200,-200,200,-200,200]);
       axis off;
       set(gcf,'inverthardcopy','off');
-      view(120,0); %rotate the viewpoint
-      saveas(gcf,strcat('myimage/time_',int2str(i)),'png');
+      view(0,120); %rotate the viewpoint
+      saveas(gcf,strcat('andromeda_3b/time_',int2str(j)),'png');
       hold off;
+      galaxy_A = [];
+      galaxy_B = [];
+      clf;
   end
-      
-   
+end
