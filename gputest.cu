@@ -23,9 +23,57 @@
 #include <stdlib.h>
 #include <curand.h>
 #include <curand_kernel.h>
-#include "dataDeclaration.h"
+
+#define PI 3.14159265
+#define BUFFERSIZE 256
+#ifndef BLOCKSIZE
+  #define BLOCKSIZE 256
+#endif
+//#define SOFTPARAMETER 0.2 * RMIN
+// #define AU 149597870700.0
+// #define R (77871.0 * 1000.0 / AU)
+// #define G (4.0 * pow(PI, 2))
+#define G 1.0
+#define MASS_1 38.2352941              // Center mass of Milky Way
+#define MASS_2 38.2352941                // Center mass of Andromeda(M31)
+#define NUM_OF_RING_1 12         // Number of rings in 1st galaxy
+#define NUM_OF_RING_2 12          // Number of rings in 2nd galaxy
+// #define RING_BASE_1 (R * 0.2)       // Radius of first ring in 1st galaxy
+// #define RING_BASE_2 (R * 0.2)       // Radius of first ring in 2nd galaxy
+#define NUM_P_BASE 12             // Number of particles in the first ring
+#define INC_NUM_P 3               // increment of number of particles each step
+// #define INC_R_RING (0.5 * R)      // increment of radius of rings each step
+#define PMASS 1             // mass of each particle
+#define V_PARAMTER 1            // Parameter adding to initial velocity to make it elliptic
+//#define RMIN (172.5 / 25)
+#define RMIN (7.733/4.5)
+#define ECCEN 0.5
+#define RMAX ((1.0 + ECCEN) * RMIN / (1.0 - ECCEN))
+#define RING_BASE_1 (RMIN * 0.2)       // Radius of first ring in 1st galaxy
+#define RING_BASE_2 (RMIN * 0.2)       // Radius of first ring in 2nd galaxy
+#define INC_R_RING (RMIN * 0.05)      // increment of radius of rings each step
+#define SOFTPARAMETER 0.000001
+#define AndromedaXOffsetP -41.0882
+#define AndromedaYOffsetP 68.3823
+#define AndromedaZOffsetP -33.8634
+#define AndromedaXOffsetV 0.2001
+#define AndromedaYOffsetV -0.1741
+#define AndromedaZOffsetV 0.0864
+#define MilkwayXOffsetP 41.0882
+#define MilkwayYOffsetP -68.3823
+#define MilkwayZOffsetP 33.8634
+#define MilkwayXOffsetV -0.2001
+#define MilkwayYOffsetV 0.1741
+#define MilkwayZOffsetV -0.0864
+
+
+
+
+
 #include "functionDeclaration.h"
 #include "otherfunctions.c"
+
+
 
 
 /**     Main function     **/
@@ -44,7 +92,7 @@ int main(int argc, char *argv[])
   mstep = argc > 1 ? atoi(argv[1]) : 100;
   nout = argc > 2 ? atoi(argv[2]) : 1;
   offset = argc > 3 ? atoi(argv[3]) : 0;
-  dt = argc > 4 ? atof(argv[4]) : 2 * PI * RMIN * RMIN /sqrt(G * MASS_1) / 40.0;
+  dt = 0.2;
 //   dt = argc > 4 ? atof(argv[4]) : 0.1;
   initialCondition_host_file("milky_way.dat", "andromeda.dat", &x, &y, &z, &vx, &vy, &vz, &mass, &n);
   int grids = ceil((double)n / BLOCKSIZE), threads = BLOCKSIZE;
@@ -159,6 +207,8 @@ __global__ void accel(int n, double *x, double *y, double *z, double *vx, double
     #pragma unroll
     for(int j = 0; j < BLOCKSIZE;j++){
       // loop unrolling
+      if(serial == i * BLOCKSIZE + j)
+        continue;
       norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
       ax += - G * lm[j] * (thisX - lx[j]) / norm;
       ay += - G * lm[j] * (thisY - ly[j]) / norm;
@@ -210,7 +260,7 @@ void initialCondition_host_file(char *input1, char *input2, double **x, double *
   double junk2;
   int count = 0;
   fscanf(fp, "%lu %lf", &junk1, &junk2);    // skip first line
-  double omega = 0.0, sigma = PI / 2.0;
+  double omega = 0.0, sigma = -PI / 2.0;
   while(!feof(fp) && count < s1){
     fscanf(fp, "%lf %lf %lf %lf %lf %lf %lf", lm + count, lx + count, ly + count, lz + count, lvx + count, lvy + count, lvz + count);
     rotate(lx + count, ly + count, lz + count, cos(omega), sin(omega), 0, sigma);

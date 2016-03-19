@@ -37,6 +37,7 @@
 // #define AU 149597870700.0
 // #define R (77871.0 * 1000.0 / AU)
 // #define G (4.0 * pow(PI, 2))
+//#define G 0.287915013
 #define G 1
 #define MASS_1 38.2352941              // Center mass of 1st galaxy
 #define MASS_2 38.2352941                // Center mass of 2nd galaxy
@@ -207,11 +208,11 @@ int main(int argc, char *argv[])
   /*  Start looping steps from first step to mstep  */
   for(int i = 0; i < offset; i++, tnow++){
     cudaDeviceSynchronize();
-    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
     leapstep<<< grids, threads >>>(n, x, y, z, vx, vy, vz, dt);
     cudaDeviceSynchronize();
-    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
   }
   for(int i = offset; i < mstep; i++, tnow++){
@@ -227,11 +228,11 @@ int main(int argc, char *argv[])
      *   in the middle
      *
      */
-    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
     leapstep<<< grids, threads >>>(n, x, y, z, vx, vy, vz, dt);
     cudaDeviceSynchronize();
-    accel_3_body<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
+    accel<<< grids, threads >>>(n, x, y, z, vx, vy, vz, mass, dt);
     cudaDeviceSynchronize();
   }
   if(mstep % nout == 0)
@@ -314,12 +315,19 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    */
 
    // Milky Way setup
-   lx[0] = 41.0882;
+/*   lx[0] = 9.8165;
+   ly[0] = -16.7203;
+   lz[0] = 8.2814;
+   lvx[0] = -0.1248;
+   lvy[0] = 0.1057;
+   lvz[0] = -0.0523;
+*/
+  lx[0] = 41.0882;
    ly[0] = -68.3823;
    lz[0] = 33.8634;
-   lvx[0] = -0.0760;
-   lvy[0] = 0.2339;
-   lvz[0] = -0.1159;
+   lvx[0] = -0.042;
+   lvy[0] = 0.2504;
+   lvz[0] = -0.1240;
 
 
    double cx = lx[0], cy = ly[0], cz = lz[0], cvx = lvx[0], cvy = lvy[0], cvz = lvz[0];
@@ -365,12 +373,19 @@ void initialCondition_host(int n, double* x, double* y, double* z, double* vx, d
    }
 
    // M31 way setup
-   lx[numofp1] = -41.0882;
+/*    lx[numofp1] = -4.6355;
+   ly[numofp1] = 7.8957;
+   lz[numofp1] = -3.9106;
+   lvx[numofp1] = 0.0589;
+   lvy[numofp1] = -0.0499;
+   lvz[numofp1] = 0.0247;
+*/
+  lx[numofp1] = -41.0882;
    ly[numofp1] = 68.3823;
    lz[numofp1] = -33.8634;
-   lvx[numofp1] = 0.0760;
-   lvy[numofp1] = -0.2339;
-   lvz[numofp1] = 0.1159;
+   lvx[numofp1] = 0.0420;
+   lvy[numofp1] = -0.2504;
+   lvz[numofp1] = 0.1240;
 
    cx = lx[count];
    cy = ly[count];
@@ -446,13 +461,12 @@ __global__ void leapstep(int n, double *x, double *y, double *z, double *vx, dou
 
 
 __global__ void accel(int n, double *x, double *y, double *z, double *vx, double *vy, double *vz, double* mass, double dt){
-  const unsigned int serial = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned int serial = blockIdx.x * BLOCKSIZE + threadIdx.x;
   const unsigned int tdx = threadIdx.x;
   __shared__ double lx[BLOCKSIZE];
   __shared__ double ly[BLOCKSIZE];
   __shared__ double lz[BLOCKSIZE];
   __shared__ double lm[BLOCKSIZE];
-  int halfsize = BLOCKSIZE / 2;
   double ax = 0.0, ay = 0.0, az = 0.0, norm, thisX = x[serial], thisY = y[serial], thisZ = z[serial];
   for(int i = 0; i < gridDim.x; i++){
     // Copy data from main memory
@@ -460,49 +474,49 @@ __global__ void accel(int n, double *x, double *y, double *z, double *vx, double
     lz[tdx] = y[i * BLOCKSIZE + tdx];
     ly[tdx] = z[i * BLOCKSIZE + tdx];
     lm[tdx] = mass[i * BLOCKSIZE + tdx];
-    lx[tdx + halfsize] = x[i * BLOCKSIZE + tdx + halfsize];
-    ly[tdx + halfsize] = y[i * BLOCKSIZE + tdx + halfsize];
-    lz[tdx + halfsize] = z[i * BLOCKSIZE + tdx + halfsize];
-    lm[tdx + halfsize] = mass[i * BLOCKSIZE + tdx + halfsize];
     __syncthreads();
     // Accumulates the acceleration
-    for(int j = 0; j < BLOCKSIZE / 2;){
+    for(int j = 0; j < BLOCKSIZE;){
       // loop unrolling
       norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
       ax += - G * lm[j] * (thisX - lx[j]) / norm;
       ay += - G * lm[j] * (thisY - ly[j]) / norm;
       az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      norm = pow(SOFTPARAMETER + pow(thisX - lx[j + halfsize], 2) + pow(thisY - ly[j + halfsize], 2) + pow(thisZ - lz[j + halfsize], 2), 1.5);
-      ax += - G * lm[j + halfsize] * (thisX - lx[j + halfsize]) / norm;
-      ay += - G * lm[j + halfsize] * (thisY - ly[j + halfsize]) / norm;
-      az += - G * lm[j + halfsize] * (thisZ - lz[j + halfsize]) / norm;
       j++;
       norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
       ax += - G * lm[j] * (thisX - lx[j]) / norm;
       ay += - G * lm[j] * (thisY - ly[j]) / norm;
       az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      norm = pow(SOFTPARAMETER + pow(thisX - lx[j + halfsize], 2) + pow(thisY - ly[j + halfsize], 2) + pow(thisZ - lz[j + halfsize], 2), 1.5);
-      ax += - G * lm[j + halfsize] * (thisX - lx[j + halfsize]) / norm;
-      ay += - G * lm[j + halfsize] * (thisY - ly[j + halfsize]) / norm;
-      az += - G * lm[j + halfsize] * (thisZ - lz[j + halfsize]) / norm;
       j++;
       norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
       ax += - G * lm[j] * (thisX - lx[j]) / norm;
       ay += - G * lm[j] * (thisY - ly[j]) / norm;
       az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      norm = pow(SOFTPARAMETER + pow(thisX - lx[j + halfsize], 2) + pow(thisY - ly[j + halfsize], 2) + pow(thisZ - lz[j + halfsize], 2), 1.5);
-      ax += - G * lm[j + halfsize] * (thisX - lx[j + halfsize]) / norm;
-      ay += - G * lm[j + halfsize] * (thisY - ly[j + halfsize]) / norm;
-      az += - G * lm[j + halfsize] * (thisZ - lz[j + halfsize]) / norm;
       j++;
       norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
       ax += - G * lm[j] * (thisX - lx[j]) / norm;
       ay += - G * lm[j] * (thisY - ly[j]) / norm;
       az += - G * lm[j] * (thisZ - lz[j]) / norm;
-      norm = pow(SOFTPARAMETER + pow(thisX - lx[j + halfsize], 2) + pow(thisY - ly[j + halfsize], 2) + pow(thisZ - lz[j + halfsize], 2), 1.5);
-      ax += - G * lm[j + halfsize] * (thisX - lx[j + halfsize]) / norm;
-      ay += - G * lm[j + halfsize] * (thisY - ly[j + halfsize]) / norm;
-      az += - G * lm[j + halfsize] * (thisZ - lz[j + halfsize]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
+      j++;
+      norm = pow(SOFTPARAMETER + pow(thisX - lx[j], 2) + pow(thisY - ly[j], 2) + pow(thisZ - lz[j], 2), 1.5);
+      ax += - G * lm[j] * (thisX - lx[j]) / norm;
+      ay += - G * lm[j] * (thisY - ly[j]) / norm;
+      az += - G * lm[j] * (thisZ - lz[j]) / norm;
       j++;
     }
     __syncthreads();

@@ -13,7 +13,11 @@ COMPILER = /usr/local/cuda-5.5/bin/nvcc
 # -g  		adds debugging information to the executable file
 # -Wall 	turns on most, but not all, compiler warnings
 # -arch=sm_20  enables double-type variables in cuda
-CFLAGS = -g -arch=sm_20
+CFLAGS = -arch=sm_20
+ifdef debug
+	CFLAGS += -g
+endif
+
 
 # set flag for environment
 # if env is set then the code is compiled under windows 10 environment
@@ -59,7 +63,7 @@ all: clean antennae andromeda
 antennae: $(OBJECTS)
 	$(COMPILER) $(CFLAGS) $(LIBRARY) -o antennae $(OBJECTS)
 
-andromeda: andromeda_nb andromeda_3b
+andromeda: andromeda_nb andromeda_3b andromeda_toy
 
 andromeda_nb:
 	$(COMPILER) $(CFLAGS) $(LIBRARY) -o andromeda_nb andromeda_nb.cu
@@ -67,6 +71,8 @@ andromeda_nb:
 andromeda_3b:
 	$(COMPILER) $(CFLAGS) $(LIBRARY) -o andromeda_3b andromeda_3b.cu
 
+andromeda_toy:
+	$(COMPILER) $(CFLAGS) $(LIBRARY) -o andromeda_toy andromeda_toy.cu
 
 # Make file test
 test: gputest.cu
