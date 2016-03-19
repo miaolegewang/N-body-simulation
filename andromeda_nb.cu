@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   }
   for (unsigned int i = offset; i < mstep; i++, tnow++) {
     if(i % nout == 0) {
-      printstate<<<grids, threads>>> (n, x, y, z, tnow);
+      printstate<<<grids, threads>>> (x, y, z, tnow);
       cudaDeviceSynchronize();
     }
 
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
   }
 
   if(mstep % nout == 0) {
-    printstate<<<grids, BLOCKSIZE>>>(n, x, y, z, tnow);
+    printstate<<<grids, BLOCKSIZE>>>(x, y, z, tnow);
   }
   cudaDeviceSynchronize();
 
